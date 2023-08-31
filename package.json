@@ -1,0 +1,21 @@
+{
+  "name": "hugging-chat-api-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express-session": "^1.17.7",
+    "axios": "^1.5.0",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "express-session": "^1.17.3"
+  }
+}
