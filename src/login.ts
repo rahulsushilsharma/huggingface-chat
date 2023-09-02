@@ -1,7 +1,6 @@
-import axios, { Axios, AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
-import fetch from 'node-fetch'
 
 export class Login {
     private email: string = ''
