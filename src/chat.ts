@@ -39,19 +39,28 @@ export default class ChatBot {
     }
 
     async getNewSession() {
-        const response = await axios.post(
-            'https://huggingface.co/chat/conversation',
-            {
-                'model': this.model || 'meta-llama/Llama-2-70b-chat-hf'
-            },
-            {
-                headers: {
-                    ...this.headers,
-                    'referer': 'https://huggingface.co/chat',
-                    'cookie': this.cookies
+        let response
+        try {
+            response = await axios.post(
+                'https://huggingface.co/chat/conversation',
+                {
+                    'model': this.model || 'meta-llama/Llama-2-70b-chat-hf'
+                },
+                {
+                    headers: {
+                        ...this.headers,
+                        'referer': 'https://huggingface.co/chat',
+                        'cookie': this.cookies
+                    }
                 }
-            }
-        )
+            )
+        } catch (e) {
+            throw new Error('Failed to faitch' + e)
+        }
+        if (!response) return
+
+        if (response.status != 200) throw new Error('Failed to create new conversion' + response)
+
         return response.data['conversationId']
     }
 
@@ -74,49 +83,54 @@ export default class ChatBot {
         stream: boolean = true,
         use_cache: boolean = false,
         is_retry: boolean = false,
-        retry_count: number = 5,
     ) {
-        if (retry_count <= 0)
-            throw new Error("the parameter retry_count must be greater than 0.")
+
         if (text == "")
             throw new Error("the prompt can not be empty.")
 
 
         await this.checkConversionId()
-
-
-        const response = await axios.post(
-            `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
-            {
-                'inputs': text,
-                'parameters': {
-                    'temperature': temperature,
-                    'truncate': truncate,
-                    "watermark": watermark,
-                    'max_new_tokens': max_new_tokens,
-                    "stop": stop,
-                    'top_p': top_p,
-                    'repetition_penalty': repetition_penalty,
-                    'top_k': top_k,
-                    'return_full_text': return_full_text
-                },
-                'stream': stream,
-                'options': {
-                    'id': uuidv4(),
-
-                    'is_retry': is_retry,
-                    'use_cache': use_cache,
-                    'web_search_id': ''
-                }
+        const data = {
+            'inputs': text,
+            'parameters': {
+                'temperature': temperature,
+                'truncate': truncate,
+                "watermark": watermark,
+                'max_new_tokens': max_new_tokens,
+                "stop": stop,
+                'top_p': top_p,
+                'repetition_penalty': repetition_penalty,
+                'top_k': top_k,
+                'return_full_text': return_full_text
             },
-            {
-                headers: {
-                    ...this.headers,
-                    'referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
-                    'cookie': this.cookies
-                }
+            'stream': stream,
+            'options': {
+                'id': uuidv4(),
+                'is_retry': is_retry,
+                'use_cache': use_cache,
+                'web_search_id': ''
             }
-        );
+        }
+        let response
+        try {
+            response = await axios.post(
+                `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
+                data,
+                {
+                    headers: {
+                        ...this.headers,
+                        'referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
+                        'cookie': this.cookies
+                    }
+                }
+            );
+        } catch (e) {
+            throw new Error('Failed to faitch' + e)
+        }
+        if (!response) return
+        if (response.status != 200) throw new Error('Failed to chat' + response)
+        return response
+
     }
 
 
