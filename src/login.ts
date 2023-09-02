@@ -94,7 +94,7 @@ export default class Login {
                 throw new Error("No authorize url found, please check your email or password.")
         }
         else if (res.status == 303) {
-            location = res.headers["location"]
+            const location = res.headers["location"]
             if (location)
                 return location
             else
@@ -170,7 +170,7 @@ export default class Login {
             throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookie}`)
 
     }
-    
+
     async cacheLogin(path: string) {
         try {
           // Check if the directory already exists
