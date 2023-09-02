@@ -2,7 +2,8 @@
 an api for hugging face chat
 
 example usage 
-```
+
+```js
 import Login from '../src/login.js'
 import ChatBot from '../src/chat.js'
 import readline from 'readline';
