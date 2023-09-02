@@ -72,25 +72,27 @@ export default class ChatBot {
 
     async chat(
         text: string,
+        currentConversionID?: string,
         temperature: number = 0.9,
         top_p: number = 0.95,
         repetition_penalty: number = 1.2,
         top_k: number = 50,
-        truncate: number = 1024,
+        truncate: number = 100,
         watermark: boolean = false,
-        max_new_tokens: number = 1024,
+        max_new_tokens: number = 100,
         stop = ["</s>"],
         return_full_text: boolean = false,
         stream: boolean = true,
         use_cache: boolean = false,
-        is_retry: boolean = false,
+        is_retry: boolean = false
     ) {
 
         if (text == "")
             throw new Error("the prompt can not be empty.")
 
+        if (!currentConversionID) await this.checkConversionId()
+        else this.currentConversionID = currentConversionID
 
-        await this.checkConversionId()
         const data = {
             'inputs': text,
             'parameters': {
@@ -138,11 +140,11 @@ export default class ChatBot {
             // });
 
             if (response.status != 200) throw new Error('Failed to chat' + response)
-            return response.data
+            return { id: this.currentConversionID, data: response.data }
 
 
-        } catch (e) {
-            throw new Error('Failed to faitch' + e)
+        } catch (error) {
+            throw new Error('Failed to faitch ' + error)
 
         }
 
