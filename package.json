@@ -12,10 +12,16 @@
   "license": "ISC",
   "devDependencies": {
     "@types/express-session": "^1.17.7",
+    "@types/tough-cookie": "^4.0.2",
     "axios": "^1.5.0",
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "express-session": "^1.17.3"
+    "axios-cookiejar-support": "^4.0.7",
+    "cheerio": "1.0.0-rc.12",
+    "express-session": "^1.17.3",
+    "node-fetch": "^3.3.2",
+    
+    "tough-cookie": "^4.1.3"
   }
 }
