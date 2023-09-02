@@ -3,7 +3,7 @@ import { open } from "fs/promises"
 import { v4 as uuidv4 } from 'uuid';
 
 export default class ChatBot {
-    private cookies!: string
+    private cookie!: string
     private model !: string
     private currentConversionID !: string
     private headers = {
@@ -22,9 +22,9 @@ export default class ChatBot {
     }
 
     constructor(cookie?: string, path?: string) {
-        if (!cookie && !path) throw new Error('cookie or path of cookies required')
+        if (!cookie && !path) throw new Error('cookie or path of cookie required')
         else if (cookie && path) throw new Error('both cookie and path given')
-        else if (cookie && !path) this.cookies = cookie
+        else if (cookie && !path) this.cookie = cookie
         else this.readCookiesFromPath(path)
 
     }
@@ -34,7 +34,7 @@ export default class ChatBot {
         const file = await open(path);
 
         for await (const line of file.readLines()) {
-            this.cookies += line
+            this.cookie += line
         }
     }
 
@@ -50,8 +50,9 @@ export default class ChatBot {
                     headers: {
                         ...this.headers,
                         'referer': 'https://huggingface.co/chat',
-                        'cookie': this.cookies
+                        'cookie': this.cookie
                     }
+
                 }
             )
         } catch (e) {
@@ -120,10 +121,20 @@ export default class ChatBot {
                     headers: {
                         ...this.headers,
                         'referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
-                        'cookie': this.cookies
-                    }
+                        'cookie': this.cookie
+                    },
+                    responseType: 'stream'
                 }
             );
+            const stream = response.data;
+
+            stream.on('data', (data: any) => {
+                console.log(data.toString());
+            });
+
+            stream.on('end', () => {
+                console.log("stream done");
+            });
         } catch (e) {
             throw new Error('Failed to faitch' + e)
         }
