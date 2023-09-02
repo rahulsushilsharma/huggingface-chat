@@ -123,24 +123,29 @@ export default class ChatBot {
                         'referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
                         'cookie': this.cookie
                     },
-                    responseType: 'stream'
+                    responseType: stream ? 'stream' : undefined
                 }
             );
-            const stream = response.data;
 
-            stream.on('data', (data: any) => {
-                console.log(data.toString());
-            });
+            // const stream = response.data;
 
-            stream.on('end', () => {
-                console.log("stream done");
-            });
+            // stream.on('data', (data: any) => {
+            //     console.log(data.toString());
+            // });
+
+            // stream.on('end', () => {
+            //     console.log("stream done");
+            // });
+
+            if (response.status != 200) throw new Error('Failed to chat' + response)
+            return response.data
+
+
         } catch (e) {
             throw new Error('Failed to faitch' + e)
+
         }
-        if (!response) return
-        if (response.status != 200) throw new Error('Failed to chat' + response)
-        return response
+
 
     }
 
