@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
 
-export class Login {
+export default class Login {
     private email: string = ''
     private password: string = ''
     private headers: any;
