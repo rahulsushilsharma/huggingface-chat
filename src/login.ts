@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
+import { open, access, mkdir, writeFile } from "fs/promises"
 
 export default class Login {
     private email: string = ''
@@ -161,15 +162,48 @@ export default class Login {
     async login() {
         await this.signinWithEmail()
         const location = await this.getAuthUrl()
-        if (await this.grantAuth(location))
+        if (await this.grantAuth(location)){
+            this.cacheLogin('./cache/')
             return this.cookie
+}
         else
             throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookie}`)
 
     }
-
-    async cacheLogin(){
-
-    }
+    
+    async cacheLogin(path: string) {
+        try {
+          // Check if the directory already exists
+          await access(path);
+          await writeFile(`${path}${this.email}.txt`, this.cookie);
+          console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.cookie}`);
+        } catch (error) {
+          // Create the directory if it doesn't exist
+          try {
+            await mkdir(path);
+            await writeFile(`${path}${this.email}.txt`, this.cookie);
+            console.log(`Cache created successfully.`);
+          } catch (error) {
+            console.error(`Error creating cache:`, error);
+          }
+        }
+      }
+    
+      async loadCache(path: string) {
+        try {
+          const file = await open(`${path}${this.email}.txt`, 'r');
+          const lines: string[] = [];
+    
+          for await (const line of file.readLines()) {
+            lines.push(line.toString());
+          }
+    
+          this.cookie = lines.join(''); // Combine lines into a single string
+          return this.cookie
+        } catch (error) {
+          console.error(`Error loading cache:`, error);
+          return ''
+        }
+      }
 }
 
