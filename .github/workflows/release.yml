@@ -8,21 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
+        uses: actions/checkout@v3
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 'lts/*'
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+          node-version: "18"
+      - run: npm ci
+      - name: Publish
+        uses: JS-DevTools/npm-publish@v2
         with:
-          version: 8
-      - name: Install dependencies
-        run: pnpm install
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: echo ${{ secrets.GITHUB_TOKEN }} ** ${{ secrets.NPM_TOKEN }}
+          token: ${{ secrets.NPM_TOKEN }}
