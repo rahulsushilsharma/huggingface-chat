@@ -1,5 +1,5 @@
-# hugging-chat-api-js
-An api for hugging face chat
+# huggingface chat api 
+A simple api for hugging face chat with login caching
  
 ## example usage 
 
