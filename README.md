@@ -1,6 +1,6 @@
 # hugging-chat-api-js
 An api for hugging face chat
-
+ 
 ## example usage 
 
 ```js
