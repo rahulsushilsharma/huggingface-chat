@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
 import { open, access, mkdir, writeFile } from "fs/promises"
@@ -19,7 +19,9 @@ export default class Login {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64",
         }
         this.jar = new CookieJar();
-        this.client = wrapper(axios.create({ jar: this.jar, withCredentials: true }));
+        this.client = wrapper(axios.create(
+            { jar: this.jar, withCredentials: true } as  CreateAxiosDefaults<any>
+            ));
 
     }
 
@@ -117,7 +119,7 @@ export default class Login {
             return null; // End string not found after the start string
         }
 
-        const str = input.substring(startIndex + 'csrf'.length, endIndex).replaceAll('&quot;', '');
+        const str = input.substring(startIndex + 'csrf'.length, endIndex).replace('/&quot;/g', '');
         return str.substring(1)
     }
 
