@@ -1,27 +1,74 @@
 {
-  "name": "hugging-chat-api-js",
+  "name": "hugging-chat",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "An api for hugging face chat.",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/esm/types/index.d.ts",
+        "default": "./lib/esm/index.mjs"
+      },
+      "require": {
+        "types": "./lib/cjs/types/index.d.ts",
+        "default": "./lib/cjs/index.js"
+      }
+    }
   },
-  "keywords": [],
-  "author": "",
+  "types": "./lib/cjs/types/index.d.ts",
+  "main": "./lib/cjs/index.js",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "clean": "del-cli ./lib",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc -p ./config/tsconfig.esm.json && move-file lib/esm/index.js lib/esm/index.mjs",
+    "build:cjs": "tsc -p ./config/tsconfig.cjs.json",
+    "prepack": "npm run build"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rahulsushilsharma/hugging-chat-api-js.git"
+  },
+  "keywords": [
+    "hugging face",
+    "chat",
+    "api",
+    "hugging",
+    "hugging-chat",
+    "LLM",
+    "LaMA",
+    "LaMA2",
+    "meta",
+    "node",
+    "browser"
+  ],
+  "bugs": {
+    "url": "https://github.com/rahulsushilsharma/hugging-chat-api-js/issues"
+  },
+  "homepage": "https://github.com/rahulsushilsharma/hugging-chat-api-js#readme",
+  "author": "Rahul Sharma",
   "license": "ISC",
   "devDependencies": {
-    "@types/express-session": "^1.17.7",
+    "@types/node": "^20.5.8",
     "@types/tough-cookie": "^4.0.2",
     "@types/uuid": "^9.0.3",
-    "axios": "^1.5.0",
+    "del-cli": "^5.0.0",
+    "move-file-cli": "^3.0.0",
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^1.5.0",
     "axios-cookiejar-support": "^4.0.7",
-    "cheerio": "1.0.0-rc.12",
-    "express-session": "^1.17.3",
-    "node-fetch": "^3.3.2",
     "tough-cookie": "^4.1.3",
     "uuid": "^9.0.0"
   }
