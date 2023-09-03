@@ -1,6 +1,6 @@
 {
   "name": "huggingface-chat",
-  "version": "1.0.4",
+  "version": "1.0.4-a",
   "type": "module",
   "description": "An api for hugging face chat.",
   "exports": {
@@ -34,10 +34,11 @@
   },
   "publishConfig": {
     "access": "public"
+    
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rahulsushilsharma/hugging-chat-api-js.git"
+    "url": "https://github.com/rahulsushilsharma/huggingface-chat.git"
   },
   "keywords": [
     "hugging face",
@@ -53,9 +54,10 @@
     "browser"
   ],
   "bugs": {
-    "url": "https://github.com/rahulsushilsharma/hugging-chat-api-js/issues"
+    "url": "https://github.com/rahulsushilsharma/huggingface-chat/issues"
   },
-  "homepage": "https://github.com/rahulsushilsharma/hugging-chat-api-js#readme",
+  
+  "homepage": "https://github.com/rahulsushilsharma/huggingface-chat#readme",
   "author": "Rahul Sharma",
   "license": "ISC",
   "devDependencies": {
