@@ -10,14 +10,13 @@ import readline from 'readline';
 
 const EMAIL = "email"
 const PASSWD = "password"
+const cachePath = "./login_cache/"
 
 const signin = new Login(EMAIL, PASSWD)
 
-const res = await signin.loadCache("./cache/")
-// const res = await signin.login()
-console.log(res);
+const res = await signin.login(cachePath) // default path is ./login_cache/
 
-const chat = new ChatBot(res)
+const chat = new ChatBot(res) // res is cookies which is required for subsequent aip calls
 
 const { id, data }= await chat.chat("who am i")
 
@@ -38,5 +37,4 @@ rl.on('line', (line) => {
 rl.on('close', () => {
     console.log('Stream closed',id);
 });
-console.log(id);
 ```
