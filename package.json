@@ -1,6 +1,6 @@
 {
-  "name": "hugging-chat",
-  "version": "1.0.0",
+  "name": "huggingface-chat",
+  "version": "1.0.1",
   "type": "module",
   "description": "An api for hugging face chat.",
   "exports": {
