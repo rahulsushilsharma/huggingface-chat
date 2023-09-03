@@ -161,11 +161,11 @@ export default class Login {
 
     }
 
-    async login() {
+    async login(cache_path?:string) {
         await this.signinWithEmail()
         const location = await this.getAuthUrl()
         if (await this.grantAuth(location)){
-            this.cacheLogin('./cache/')
+            this.cacheLogin(cache_path || './login_cache/')
             return this.cookie
 }
         else
