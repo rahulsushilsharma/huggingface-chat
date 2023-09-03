@@ -1,6 +1,9 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { open } from "fs/promises"
 import { v4 as uuidv4 } from 'uuid';
+import { Readable, Transform } from 'stream';
+import readline from 'readline';
+// const Readable = require('stream').Readable;
 
 export default class ChatBot {
     private cookie!: string
@@ -39,7 +42,7 @@ export default class ChatBot {
     }
 
     async getNewSession() {
-        let response
+        let response: AxiosResponse<any, any>
         try {
             response = await axios.post(
                 'https://huggingface.co/chat/conversation',
@@ -66,8 +69,14 @@ export default class ChatBot {
     }
 
     async checkConversionId() {
-        if (!this.currentConversionID)
+        console.log('conversionID', this.currentConversionID)
+
+        if (!this.currentConversionID) {
+
             this.currentConversionID = await this.getNewSession()
+            console.log('creating new conversion', this.currentConversionID)
+
+        }
     }
 
     async chat(
@@ -93,6 +102,7 @@ export default class ChatBot {
         if (!currentConversionID) await this.checkConversionId()
         else this.currentConversionID = currentConversionID
 
+
         const data = {
             'inputs': text,
             'parameters': {
@@ -114,7 +124,7 @@ export default class ChatBot {
                 'web_search_id': ''
             }
         }
-        let response
+        let response: AxiosResponse<any, any>
         try {
             response = await axios.post(
                 `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
@@ -129,18 +139,16 @@ export default class ChatBot {
                 }
             );
 
-            // const stream = response.data;
-
-            // stream.on('data', (data: any) => {
-            //     console.log(data.toString());
-            // });
-
-            // stream.on('end', () => {
-            //     console.log("stream done");
-            // });
-
+            const transformStream = new Transform({
+                transform(chunk, encoding, callback) {
+                    const transformedData = chunk.toString().substring(5).trim();
+                    this.push(transformedData); // Push the transformed data to the new stream
+                    callback();
+                }
+            });
+            const op = response.data.pipe(transformStream)
             if (response.status != 200) throw new Error('Failed to chat' + response)
-            return { id: this.currentConversionID, data: response.data }
+            return { id: this.currentConversionID, data: op }
 
 
         } catch (error) {
@@ -149,9 +157,49 @@ export default class ChatBot {
         }
 
 
+
     }
 
 
+    // Return a summary of the conversation.
+
+    async summarizeConversation(conversation_id?: string) {
+
+        if (conversation_id)
+            this.currentConversionID = conversation_id
+        let response: AxiosResponse<any, any>
+
+        try {
+            response = await axios.post(
+                `https://huggingface.co/chat/conversation/${this.currentConversionID}/summarize`,
+                '',
+                {
+                    headers: {
+                        ...this.headers,
+                        'Referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
+                        'cookie': this.cookie
+                    }
+                }
+            );
+
+        } catch (error) {
+            throw new Error("Unable to summarize chat " + error)
+        }
+        if (response.data) {
+            try {
+                const res = JSON.parse(response.data)
+                if (!res.hasOwnProperty('title')) throw new Error("Unknown response from chat summarization " + response.data)
+            } catch (error) {
+                throw new Error("Unknown response from chat summarization " + response.data)
+            }
+        }
+        return response.data
+    }
+
+
+    preserveContext() {
+
+    }
 
 }
 
