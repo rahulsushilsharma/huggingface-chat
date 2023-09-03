@@ -133,3 +133,4 @@ dist
 # local test
 test/
 cache/
+lib/
