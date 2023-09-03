@@ -51,7 +51,8 @@
     "LaMA2",
     "meta",
     "node",
-    "browser"
+    "huggingface",
+    "huggingface chat"
   ],
   "bugs": {
     "url": "https://github.com/rahulsushilsharma/huggingface-chat/issues"
