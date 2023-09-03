@@ -191,7 +191,7 @@ export default class Login {
         }
       }
     
-      async loadCache(path: string) {
+      async loadLoginCache(path: string) {
         try {
           const file = await open(`${path}${this.email}.txt`, 'r');
           const lines: string[] = [];
