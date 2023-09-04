@@ -23,6 +23,7 @@ export default class ChatBot {
         'sec-fetch-site': 'same-origin',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
     }
+    private chatLength = 0
 
     constructor(cookie?: string, path?: string) {
         if (!cookie && !path) throw new Error('cookie or path of cookie required')
@@ -64,7 +65,7 @@ export default class ChatBot {
         if (!response) return
 
         if (response.status != 200) throw new Error('Failed to create new conversion' + response)
-
+        await this.preserveContext(true)
         return response.data['conversationId']
     }
 
@@ -91,7 +92,7 @@ export default class ChatBot {
         max_new_tokens: number = 100,
         stop = ["</s>"],
         return_full_text: boolean = false,
-        stream: boolean = true,
+        stream: boolean = false,
         use_cache: boolean = false,
         is_retry: boolean = false
     ) {
@@ -125,39 +126,41 @@ export default class ChatBot {
             }
         }
         let response: AxiosResponse<any, any>
-        try {
-            response = await axios.post(
-                `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
-                data,
-                {
-                    headers: {
-                        ...this.headers,
-                        'referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
-                        'cookie': this.cookie
-                    },
-                    responseType: stream ? 'stream' : undefined
-                }
-            );
 
-            const transformStream = new Transform({
-                transform(chunk, encoding, callback) {
-                    const transformedData = chunk.toString().substring(5).trim();
-                    this.push(transformedData); // Push the transformed data to the new stream
-                    callback();
-                }
-            });
-            const op = response.data.pipe(transformStream)
-            if (response.status != 200) throw new Error('Failed to chat' + response)
-            return { id: this.currentConversionID, data: op }
+        response = await axios.post(
+            `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
+            data,
+            {
+                headers: {
+                    ...this.headers,
+                    'referer': `https://huggingface.co/chat/conversation/${this.currentConversionID}`,
+                    'cookie': this.cookie
+                },
+                responseType: stream ? 'stream' : undefined
+            }
+        );
+        console.log(response);
 
 
-        } catch (error) {
-            throw new Error('Failed to faitch ' + error)
+        // if (response.status != 200) throw new Error('Failed to chat' + response)
 
+
+        if (this.chatLength <= 0) {
+            await this.summarizeConversation()
         }
 
 
+        this.chatLength += 1;
 
+        // const transformStream = new Transform({
+        //     transform(chunk, encoding, callback) {
+        //         const transformedData = chunk.toString().substring(5).trim();
+        //         this.push(transformedData); // Push the transformed data to the new stream
+        //         callback();
+        //     }
+        // });
+        // response.data.pipe(transformStream)
+        return { id: this.currentConversionID, data: response.data }
     }
 
 
@@ -185,21 +188,52 @@ export default class ChatBot {
         } catch (error) {
             throw new Error("Unable to summarize chat " + error)
         }
-        if (response.data) {
-            try {
-                const res = JSON.parse(response.data)
-                if (!res.hasOwnProperty('title')) throw new Error("Unknown response from chat summarization " + response.data)
-            } catch (error) {
-                throw new Error("Unknown response from chat summarization " + response.data)
-            }
-        }
+        // if (response.data) {
+        //     try {
+        //         const res = JSON.parse(response.data)
+        //         if (!res.hasOwnProperty('title')) throw new Error("Unknown response from chat summarization " + response.data)
+        //     } catch (error) {
+        //         throw new Error("Unknown response from chat summarization " + response.data)
+        //     }
+        // }
+        console.log("summarizing chat", response.data);
+
         return response.data
     }
 
 
-    preserveContext() {
+    async preserveContext(newChat: boolean) {
+        let response: AxiosResponse<any, any>
+        let referer = ''
+        let sveltekit = ''
+        if (newChat) {
+            referer = "https://huggingface.co/chat"
+            sveltekit = '1_1'
+        } else {
+            referer = `https://huggingface.co/chat/conversation/${this.currentConversionID}`
+            sveltekit = '1_'
+        }
+        try {
+            response = await axios.get(`https://huggingface.co/chat/conversation/${this.currentConversionID}/__data.json`, {
+                params: {
+                    'x-sveltekit-invalidated': sveltekit
+                },
 
+                headers: {
+                    ...this.headers,
+                    'Referer': referer,
+                    'cookie': this.cookie
+                }
+            });
+
+        } catch (error) {
+            throw new Error("Unable to preserve chat context " + error)
+        }
+        console.log("preversing chat", response.data);
+
+        return response
     }
+
 
 }
 
