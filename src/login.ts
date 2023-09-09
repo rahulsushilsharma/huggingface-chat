@@ -7,8 +7,8 @@ export default class Login {
     private email: string = ''
     private password: string = ''
     private headers: any;
-    private jar !: CookieJar
-    private client !: AxiosInstance
+    private jar  = {}
+    
     private cookie: string = ''
 
     constructor(email: string, password: string) {
@@ -18,41 +18,35 @@ export default class Login {
             "Referer": "https://huggingface.co/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64",
         }
-        this.jar = new CookieJar();
-        this.client = wrapper(axios.create(
-            { jar: this.jar, withCredentials: true } as  CreateAxiosDefaults<any>
-            ));
+       
 
     }
 
-    async get(url: string, _parms?: any) {
+    async get(_url: string, _parms?: any[]) {
+        const url = new URL(_url,)
+        for(const parms of _parms||[]){
+            url.searchParams.append(parms.key,parms.value)
+        }
         const headers = {
             ...this.headers,
             Cookie: this.cookie
         }
-        const response = await axios.get(url, {
-            params: _parms,
+        const response = await fetch(url, {
+            method:'GET',
             headers: headers,
-            validateStatus: function (status) {
-                return status >= 200 && status < 400
-            },
-            maxRedirects: 0
-
-
         });
         return response
     }
 
 
-    async post(url: string, data = {}, _headers = {}) {
+    async post(_url: string, data = {}, _headers = {}) {
+        const url = new URL(_url)
+        
+        let response = await fetch(url, {
+            method:"POST",
+            ..._headers,
+            Cookie: this.cookie
 
-
-        let response = await this.client.post(url, new URLSearchParams(data), {
-            headers: _headers,
-            validateStatus: function (status) {
-                return status >= 200 && status < 400
-            },
-            maxRedirects: 0
         })
         this.refreshCookies()
         return response
