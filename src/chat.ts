@@ -22,9 +22,7 @@ export default class ChatBot {
         else if (cookie && path) throw new Error('both cookie and path given')
         else if (cookie && !path) this.cookie = cookie
         else this.readCookiesFromPath(path)
-        const data:Store = {
-            
-        }
+        
         this.jar = new CookieJar();
         this.client = wrapper(axios.create(
             { jar: this.jar, withCredentials: true } as CreateAxiosDefaults<any>
