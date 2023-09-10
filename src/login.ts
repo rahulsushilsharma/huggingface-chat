@@ -2,13 +2,14 @@ import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
 import { wrapper } from 'axios-cookiejar-support';
 import { CookieJar } from 'tough-cookie';
 import { open, access, mkdir, writeFile } from "fs/promises"
+import { log } from 'console';
 
 export default class Login {
     private email: string = ''
     private password: string = ''
     private headers: any;
-    private jar  = {}
-    
+    private jar = {}
+
     private cookie: string = ''
 
     constructor(email: string, password: string) {
@@ -18,21 +19,21 @@ export default class Login {
             "Referer": "https://huggingface.co/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64",
         }
-       
+
 
     }
 
     async get(_url: string, _parms?: any[]) {
         const url = new URL(_url,)
-        for(const parms of _parms||[]){
-            url.searchParams.append(parms.key,parms.value)
+        for (const parms of _parms || []) {
+            url.searchParams.append(parms.key, parms.value)
         }
         const headers = {
             ...this.headers,
             Cookie: this.cookie
         }
         const response = await fetch(url, {
-            method:'GET',
+            method: 'GET',
             headers: headers,
         });
         return response
@@ -41,23 +42,25 @@ export default class Login {
 
     async post(_url: string, data = {}, _headers = {}) {
         const url = new URL(_url)
-        
-        let response = await fetch(url, {
-            method:"POST",
-            ..._headers,
-            Cookie: this.cookie
 
+        let response = await fetch(url, {
+            method: "POST",
+            headers: {
+                ..._headers,
+                Cookie: this.cookie
+            },
+            body:new URLSearchParams(data)
         })
-        this.refreshCookies()
+        this.refreshCookies(response)
         return response
     }
 
-    refreshCookies() {
-        const { cookies } = this.jar.toJSON()
-        this.cookie = '';
-        for (const cookie of cookies) {
-            this.cookie += `${cookie.key}=${cookie.value};`
-        }
+    refreshCookies(response: Response) {
+        const cookies  = response.headers.get('cookies') || ""
+        this.cookie = cookies;
+        // for (const cookie of cookies) {
+        //     this.cookie += `${cookie.key}=${cookie.value};`
+        // }
     }
 
     async signinWithEmail() {
@@ -82,15 +85,19 @@ export default class Login {
         }
         const res = await this.post(url, {}, headers)
 
+        const resJson = await res.clone().json().catch(e=>console.log('error at getauthurl',e)
+        )
+        // const resText = await res.clone().text()
         if (res.status == 200) {
-            let location = res.data.location;
+            
+            let location = resJson.location;
             if (location)
                 return location
             else
                 throw new Error("No authorize url found, please check your email or password.")
         }
         else if (res.status == 303) {
-            const location = res.headers["location"]
+            const location = res.headers.get('location') || ""
             if (location)
                 return location
             else
@@ -103,6 +110,7 @@ export default class Login {
     }
 
     getCrpf(input: string): string | null {
+        console.log(input)
         const startIndex = input.indexOf('csrf');
         if (startIndex === -1) {
             return null; // Start string not found in input
@@ -120,9 +128,12 @@ export default class Login {
 
     async grantAuth(url: string) {
         let res = await this.get(url)
+        log(res.headers.get('location'), res.headers)
+                // const resJson = await res.clone().json()
+        const resText = await res.clone().text()
         let location: any
-        if (res.headers.hasOwnProperty("location")) {
-            location = res.headers["location"]
+        if (res.headers.get('location')) {
+            location = res.headers.get('location') 
             // console.log(location)
             res = await this.get(location)
             // console.log("grant auth", this.cookie, this.cookie.includes("hf-chat"));
@@ -134,19 +145,19 @@ export default class Login {
         if (res.status != 200)
             throw new Error("grant auth fatal!")
 
-        const csrf = this.getCrpf(res.data)
+        const csrf = this.getCrpf(resText)
         // console.log(csrf, res.data);
 
         if (!csrf)
             throw new Error("No csrf found!")
-        let data = {
+        let data = [{
             "csrf": csrf
-        }
+        }]
         res = await this.get(url, data)
         if (res.status != 303)
             throw new Error(`get hf-chat cookies fatal! - ${res.status}`)
         else
-            location = res.headers["Location"]
+            location = res.headers.get('location')
         res = await this.get(location)
         if (res.status != 302)
             throw new Error(`get hf-chat cookie fatal! - ${res.status}`)
@@ -155,13 +166,13 @@ export default class Login {
 
     }
 
-    async login(cache_path?:string) {
+    async login(cache_path?: string) {
         await this.signinWithEmail()
         const location = await this.getAuthUrl()
-        if (await this.grantAuth(location)){
+        if (await this.grantAuth(location)) {
             this.cacheLogin(cache_path || './login_cache/')
             return this.cookie
-}
+        }
         else
             throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookie}`)
 
@@ -169,37 +180,37 @@ export default class Login {
 
     async cacheLogin(path: string) {
         try {
-          // Check if the directory already exists
-          await access(path);
-          await writeFile(`${path}${this.email}.txt`, this.cookie);
-          console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.cookie}`);
-        } catch (error) {
-          // Create the directory if it doesn't exist
-          try {
-            await mkdir(path);
+            // Check if the directory already exists
+            await access(path);
             await writeFile(`${path}${this.email}.txt`, this.cookie);
-            console.log(`Cache created successfully.`);
-          } catch (error) {
-            console.error(`Error creating cache:`, error);
-          }
-        }
-      }
-    
-      async loadLoginCache(path: string) {
-        try {
-          const file = await open(`${path}${this.email}.txt`, 'r');
-          const lines: string[] = [];
-    
-          for await (const line of file.readLines()) {
-            lines.push(line.toString());
-          }
-    
-          this.cookie = lines.join(''); // Combine lines into a single string
-          return this.cookie
+            console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.cookie}`);
         } catch (error) {
-          console.error(`Error loading cache:`, error);
-          return ''
+            // Create the directory if it doesn't exist
+            try {
+                await mkdir(path);
+                await writeFile(`${path}${this.email}.txt`, this.cookie);
+                console.log(`Cache created successfully.`);
+            } catch (error) {
+                console.error(`Error creating cache:`, error);
+            }
         }
-      }
+    }
+
+    async loadLoginCache(path: string) {
+        try {
+            const file = await open(`${path}${this.email}.txt`, 'r');
+            const lines: string[] = [];
+
+            for await (const line of file.readLines()) {
+                lines.push(line.toString());
+            }
+
+            this.cookie = lines.join(''); // Combine lines into a single string
+            return this.cookie
+        } catch (error) {
+            console.error(`Error loading cache:`, error);
+            return ''
+        }
+    }
 }
 
