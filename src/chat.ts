@@ -1,5 +1,6 @@
 import { open } from "fs/promises"
 import { randomUUID } from 'crypto';
+import readline from 'readline';
 
 export default class ChatBot {
   private cookie!: string
@@ -129,17 +130,48 @@ export default class ChatBot {
       "body": JSON.stringify(data),
       "method": "POST"
     });
-    const resText = await response.text()
-    console.log(resText)
 
-    if (this.chatLength <= 0) {
-      await this.summarizeConversation()
+    function parseResponse(chunck: string) {
+      try {
+        const jsonObject = JSON.parse(chunck.substring(5).trim());
+        return jsonObject
+      } catch (error) {
+        if (chunck.substring(5).trim()) console.error('Error parsing JSON:', chunck.substring(5).trim());
+        return ''
+      }
     }
 
 
+
+
+
+
+    const decoder = new TextDecoder();
+    const self = this;
+    const transformStream = new TransformStream({
+      async transform(chunk, controller) {
+        const decodedChunk = decoder.decode(chunk)
+
+        const modifiedData = parseResponse(decodedChunk)
+
+        if (modifiedData.generated_text) {
+          controller.terminate();
+          if (self.chatLength <= 0) {
+            await self.summarizeConversation()
+          }
+
+        } else {
+          controller.enqueue(modifiedData.token.text);
+
+        }
+      },
+    });
+    const modifiedStream = response.body?.pipeThrough(transformStream);
     this.chatLength += 1;
-    return { id: this.currentConversionID, data: resText }
+    return { id: this.currentConversionID, data: modifiedStream }
   }
+
+
 
   async summarizeConversation(conversation_id?: string) {
 
@@ -218,4 +250,5 @@ export default class ChatBot {
     return response
   }
 }
+
 
