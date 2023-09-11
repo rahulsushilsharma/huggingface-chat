@@ -198,13 +198,12 @@ export default class Login {
             // Check if the directory already exists
             await access(path);
             await writeFile(`${path}${this.email}.txt`, this.parseCookies());
-            console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.parseCookies()}`);
+            console.error(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.parseCookies()}`);
         } catch (error) {
             // Create the directory if it doesn't exist
             try {
                 await mkdir(path);
                 await writeFile(`${path}${this.email}.txt`, this.parseCookies());
-                console.log(`Cache created successfully.`);
             } catch (error) {
                 console.error(`Error creating cache:`, error);
             }
