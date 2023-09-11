@@ -59,13 +59,8 @@ export default class ChatBot {
   }
 
   async checkConversionId() {
-    console.log('conversionID', this.currentConversionID)
-
     if (!this.currentConversionID) {
-
       this.currentConversionID = await this.getNewChat()
-      console.log('creating new conversion', this.currentConversionID)
-
     }
   }
 
@@ -148,6 +143,11 @@ export default class ChatBot {
 
     const decoder = new TextDecoder();
     const self = this;
+    let completeResponse = ''
+    // async function completeResponse(res: string){
+    //   return new Promise<string>(resolve=>resolve(res))
+    // }
+
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk)
@@ -155,20 +155,45 @@ export default class ChatBot {
         const modifiedData = parseResponse(decodedChunk)
 
         if (modifiedData.generated_text) {
+          completeResponse = modifiedData.generated_text
           controller.terminate();
           if (self.chatLength <= 0) {
             await self.summarizeConversation()
           }
-
         } else {
+          completeResponse = modifiedData.generated_text
           controller.enqueue(modifiedData.token.text);
 
         }
       },
     });
+
+
     const modifiedStream = response.body?.pipeThrough(transformStream);
+
+
+    async function completeResponsePromise() {
+      return new Promise<string>(async (resolve) => {
+        if (!modifiedStream) {
+          console.error('modifiedStream undefined');
+
+        } else {
+          let reader = modifiedStream.getReader();
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              resolve(completeResponse)
+              break; // The streaming has ended.
+            }
+          }
+        }
+      })
+    }
+
     this.chatLength += 1;
-    return { id: this.currentConversionID, data: modifiedStream }
+    return { id: this.currentConversionID, stream: modifiedStream, completeResponsePromise }
   }
 
 
@@ -199,7 +224,6 @@ export default class ChatBot {
 
     })
     const resJson = await response.json().catch(error => { throw new Error('Unknown response ' + error) })
-    console.log('chat summary ', resJson)
     return resJson
   }
 
