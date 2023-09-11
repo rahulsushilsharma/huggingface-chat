@@ -1,15 +1,12 @@
-import axios, { AxiosInstance, CreateAxiosDefaults } from 'axios';
-import { wrapper } from 'axios-cookiejar-support';
-import { CookieJar } from 'tough-cookie';
+import axios, { AxiosInstance, AxiosResponse, CreateAxiosDefaults } from 'axios';
 import { open, access, mkdir, writeFile } from "fs/promises"
 
 export default class Login {
     private email: string = ''
     private password: string = ''
     private headers: any;
-    private jar !: CookieJar
     private client !: AxiosInstance
-    private cookie: string = ''
+    private cookies:Record<string, any> = {}
 
     constructor(email: string, password: string) {
         this.email = email;
@@ -18,17 +15,25 @@ export default class Login {
             "Referer": "https://huggingface.co/",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.64",
         }
-        this.jar = new CookieJar();
-        this.client = wrapper(axios.create(
-            { jar: this.jar, withCredentials: true } as  CreateAxiosDefaults<any>
-            ));
+        this.client = axios.create(
+            { withCredentials: true }
+        );
 
     }
+
+    parseCookies() {
+        let res = ''
+        if(!this.cookies) return res
+        if ('token' in this.cookies)res += `token=${this.cookies['token']};`
+        if ('hf-chat' in this.cookies)res +=`hf-chat=${this.cookies['hf-chat']}; `
+        return res
+    }
+
 
     async get(url: string, _parms?: any) {
         const headers = {
             ...this.headers,
-            Cookie: this.cookie
+            Cookie: this.parseCookies()
         }
         const response = await axios.get(url, {
             params: _parms,
@@ -40,30 +45,49 @@ export default class Login {
 
 
         });
+        this.refreshCookies(response)
         return response
     }
 
 
     async post(url: string, data = {}, _headers = {}) {
 
-
+        const headers = {
+            ..._headers,
+            Cookie: this.parseCookies()
+        }
         let response = await this.client.post(url, new URLSearchParams(data), {
-            headers: _headers,
+            headers,
             validateStatus: function (status) {
                 return status >= 200 && status < 400
             },
             maxRedirects: 0
         })
-        this.refreshCookies()
+        this.refreshCookies(response)
         return response
     }
 
-    refreshCookies() {
-        const { cookies } = this.jar.toJSON()
-        this.cookie = '';
-        for (const cookie of cookies) {
-            this.cookie += `${cookie.key}=${cookie.value};`
+    refreshCookies(response: AxiosResponse<any, any>) {
+        const raw_cookies = response.headers['set-cookie'] || [];
+        let cookies :Record<string, any>[] = []
+        try {
+            for (const cookie of raw_cookies) {
+                let jsonCookie:Record<string, any> = {}
+                for (const value of cookie.trim().split(';')) {
+                    const temp = value.trim().split('=')
+                    const key = temp[0]
+                    jsonCookie[key] = temp[1] || true
+                }
+                cookies.push(jsonCookie)
+            }
+        } catch (error) {
+            console.error(error);
         }
+        for (const cookie of cookies) {
+            if ('token' in cookie) this.cookies['token'] = cookie['token']
+            if ('hf-chat' in cookie) this.cookies['hf-chat'] = cookie['hf-chat']
+        }
+
     }
 
     async signinWithEmail() {
@@ -129,19 +153,15 @@ export default class Login {
         let location: any
         if (res.headers.hasOwnProperty("location")) {
             location = res.headers["location"]
-            // console.log(location)
             res = await this.get(location)
-            // console.log("grant auth", this.cookie, this.cookie.includes("hf-chat"));
 
-            if (this.cookie.includes("hf-chat"))
+            if (res.headers['set-cookie'] && res.headers['set-cookie'][0].includes("hf-chat"))
                 return 1
         }
-        // # raise Exception("grantAuth fatal")
         if (res.status != 200)
             throw new Error("grant auth fatal!")
 
         const csrf = this.getCrpf(res.data)
-        // console.log(csrf, res.data);
 
         if (!csrf)
             throw new Error("No csrf found!")
@@ -161,50 +181,33 @@ export default class Login {
 
     }
 
-    async login(cache_path?:string) {
+    async login(cache_path?: string) {
         await this.signinWithEmail()
         const location = await this.getAuthUrl()
-        if (await this.grantAuth(location)){
+        if (await this.grantAuth(location)) {
             this.cacheLogin(cache_path || './login_cache/')
-            return this.cookie
-}
+            return this.parseCookies()
+        }
         else
-            throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookie}`)
+            throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookies}`)
 
     }
 
     async cacheLogin(path: string) {
         try {
-          // Check if the directory already exists
-          await access(path);
-          await writeFile(`${path}${this.email}.txt`, this.cookie);
-          console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.cookie}`);
+            // Check if the directory already exists
+            await access(path);
+            await writeFile(`${path}${this.email}.txt`, this.parseCookies());
+            console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.cookies}`);
         } catch (error) {
-          // Create the directory if it doesn't exist
-          try {
-            await mkdir(path);
-            await writeFile(`${path}${this.email}.txt`, this.cookie);
-            console.log(`Cache created successfully.`);
-          } catch (error) {
-            console.error(`Error creating cache:`, error);
-          }
+            // Create the directory if it doesn't exist
+            try {
+                await mkdir(path);
+                await writeFile(`${path}${this.email}.txt`, this.parseCookies());
+                console.log(`Cache created successfully.`);
+            } catch (error) {
+                console.error(`Error creating cache:`, error);
+            }
         }
-      }
-    
-      async loadLoginCache(path: string) {
-        try {
-          const file = await open(`${path}${this.email}.txt`, 'r');
-          const lines: string[] = [];
-    
-          for await (const line of file.readLines()) {
-            lines.push(line.toString());
-          }
-    
-          this.cookie = lines.join(''); // Combine lines into a single string
-          return this.cookie
-        } catch (error) {
-          console.error(`Error loading cache:`, error);
-          return ''
-        }
-      }
+    }
 }
