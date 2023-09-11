@@ -6,7 +6,7 @@ export default class Login {
     private password: string = ''
     private headers: any;
     private client !: AxiosInstance
-    private cookies:Record<string, any> = {}
+    private cookies: Record<string, any> = {}
 
     constructor(email: string, password: string) {
         this.email = email;
@@ -23,9 +23,9 @@ export default class Login {
 
     parseCookies() {
         let res = ''
-        if(!this.cookies) return res
-        if ('token' in this.cookies)res += `token=${this.cookies['token']};`
-        if ('hf-chat' in this.cookies)res +=`hf-chat=${this.cookies['hf-chat']}; `
+        if (!this.cookies) return res
+        if ('token' in this.cookies) res += `token=${this.cookies['token']};`
+        if ('hf-chat' in this.cookies) res += `hf-chat=${this.cookies['hf-chat']}; `
         return res
     }
 
@@ -69,10 +69,10 @@ export default class Login {
 
     refreshCookies(response: AxiosResponse<any, any>) {
         const raw_cookies = response.headers['set-cookie'] || [];
-        let cookies :Record<string, any>[] = []
+        let cookies: Record<string, any>[] = []
         try {
             for (const cookie of raw_cookies) {
-                let jsonCookie:Record<string, any> = {}
+                let jsonCookie: Record<string, any> = {}
                 for (const value of cookie.trim().split(';')) {
                     const temp = value.trim().split('=')
                     const key = temp[0]
@@ -198,7 +198,7 @@ export default class Login {
             // Check if the directory already exists
             await access(path);
             await writeFile(`${path}${this.email}.txt`, this.parseCookies());
-            console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.cookies}`);
+            console.log(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.parseCookies()}`);
         } catch (error) {
             // Create the directory if it doesn't exist
             try {
@@ -210,4 +210,20 @@ export default class Login {
             }
         }
     }
+
+    async loadLoginCache(path: string) {
+        try {
+            const file = await open(`${path}${this.email}.txt`, 'r');
+            const lines: string[] = [];
+
+            for await (const line of file.readLines()) {
+                lines.push(line.toString());
+            }
+            return lines.join('');
+        } catch (error) {
+            console.error(`Error loading cache:`, error);
+            return ''
+        }
+    }
 }
+
