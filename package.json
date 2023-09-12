@@ -1,6 +1,6 @@
 {
   "name": "huggingface-chat",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "type": "module",
   "description": "An api for hugging face chat.",
   "exports": {
@@ -48,8 +48,8 @@
     "hugging",
     "hugging-chat",
     "LLM",
-    "LaMA",
-    "LaMA2",
+    "Llama",
+    "Llama 2",
     "meta",
     "node",
     "huggingface",
