@@ -6,7 +6,19 @@ export default class ChatBot {
   private cookie!: string
   private currentConversionID !: string
   private chatLength = 0
-  private models = ['codellama/CodeLlama-34b-Instruct-hf']
+  private models = ['meta-llama/Llama-2-70b-chat-hf', 'codellama/CodeLlama-34b-Instruct-hf', 'OpenAssistant/oasst-sft-6-llama-30b-xor']
+  private headers = {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  }
+  private currentModel = this.models[0]
 
   constructor(cookie?: string, path?: string) {
     if (!cookie && !path) throw new Error('cookie or path of cookie required')
@@ -15,9 +27,15 @@ export default class ChatBot {
     else this.readCookiesFromPath(path)
   }
 
-  async getHcSession() {
-
+  switchModel(value: 'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'OpenAssistant/oasst-sft-6-llama-30b-xor') {
+    this.currentConversionID = '';
+    this.currentModel = value
   }
+
+  listAvilableModels() {
+    return this.models
+  }
+  
   async readCookiesFromPath(path: string | undefined) {
     if (!path) throw new Error('cookie path undefined')
     const file = await open(path);
@@ -29,22 +47,14 @@ export default class ChatBot {
 
   async getNewChat() {
     const model = {
-      model: this.models[0]
+      model: this.currentModel
     }
     let response = await fetch("https://huggingface.co/chat/conversation", {
       "headers": {
-        "accept": "*/*",
-        "accept-language": "en-US,en;q=0.9",
+        ...this.headers,
         "content-type": "application/json",
-        "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
         "cookie": this.cookie,
         "Referer": "https://huggingface.co/chat/",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
       },
       "body": JSON.stringify(model),
       "method": "POST"
@@ -109,18 +119,10 @@ export default class ChatBot {
     }
     const response = await fetch("https://huggingface.co/chat/conversation/" + this.currentConversionID + "", {
       "headers": {
-        "accept": "*/*",
-        "accept-language": "en-US,en;q=0.9",
+        ...this.headers,
         "content-type": "application/json",
-        "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
         "cookie": this.cookie,
         "Referer": "https://huggingface.co/chat/conversation/" + this.currentConversionID + "",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
       },
       "body": JSON.stringify(data),
       "method": "POST"
@@ -205,17 +207,9 @@ export default class ChatBot {
     }
     const response = await fetch("https://huggingface.co/chat/conversation/" + conversation_id + "/summarize", {
       "headers": {
-        "accept": "*/*",
-        "accept-language": "en-US,en;q=0.9",
-        "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-origin",
+        ...this.headers,
         "cookie": this.cookie,
         "Referer": "https://huggingface.co/chat/conversation/" + conversation_id + "",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
       },
       "body": null,
       "method": "POST"
@@ -233,17 +227,9 @@ export default class ChatBot {
     if (newChat) {
       response = await fetch("https://huggingface.co/chat/conversation/" + this.currentConversionID + "/__data.json?x-sveltekit-invalidated=1_1", {
         "headers": {
-          "accept": "*/*",
-          "accept-language": "en-US,en;q=0.9",
-          "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": "\"Windows\"",
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
+          ...this.headers,
           "cookie": this.cookie,
           "Referer": "https://huggingface.co/chat/",
-          "Referrer-Policy": "strict-origin-when-cross-origin"
         },
         "body": null,
         "method": "GET"
@@ -252,17 +238,9 @@ export default class ChatBot {
     } else {
       response = await fetch("https://huggingface.co/chat/conversation/" + this.currentConversionID + "/__data.json?x-sveltekit-invalidated=1_", {
         "headers": {
-          "accept": "*/*",
-          "accept-language": "en-US,en;q=0.9",
-          "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": "\"Windows\"",
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
+          ...this.headers,
           "cookie": this.cookie,
           "Referer": "https://huggingface.co/chat/conversation/" + this.currentConversionID + "",
-          "Referrer-Policy": "strict-origin-when-cross-origin"
         },
         "body": null,
         "method": "GET"
