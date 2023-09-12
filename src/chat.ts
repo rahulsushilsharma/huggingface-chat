@@ -1,6 +1,5 @@
 import { open } from "fs/promises"
 import { randomUUID } from 'crypto';
-import readline from 'readline';
 
 export default class ChatBot {
   private cookie!: string

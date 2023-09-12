@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse, CreateAxiosDefaults } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { open, access, mkdir, writeFile } from "fs/promises"
 
 export default class Login {
