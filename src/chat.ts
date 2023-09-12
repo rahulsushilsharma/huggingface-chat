@@ -105,7 +105,12 @@ export default class ChatBot {
     }
   }
 
-
+  /**
+   * @typedef ChatResponse
+   * @property {string} id conversation ID
+   * @property {ReadableStream|undefined} stream Get stream response
+   * @property {completeResponsePromise: () => Promise<string>} completeResponsePromise Get complete response
+   */
   /**
      * Initiates a chat with the provided text.
      * @param {string} text - The user's input text or prompt.
@@ -120,7 +125,7 @@ export default class ChatBot {
      * @param {boolean} stream - Whether to use streaming for text generation.
      * @param {boolean} use_cache - Whether to use cached results for text generation.
      * @param {boolean} is_retry - Whether the request is a retry.
-     * @returns {Promise<{ id: string, stream: ReadableStream|undefined, completeResponsePromise: () => Promise<string> }>} An object containing conversation details.
+     * @returns {Promise<ChatResponse>} An object containing conversation details.
      * @throws {Error} If there is an issue with the chat request.
      */
   async chat(
@@ -136,7 +141,7 @@ export default class ChatBot {
     stream: boolean = true,
     use_cache: boolean = false,
     is_retry: boolean = false
-  ): Promise<{ id: string; stream: ReadableStream|undefined; completeResponsePromise: () => Promise<string>; }> {
+  ): Promise<{ id: string; stream: ReadableStream | undefined; completeResponsePromise: () => Promise<string>; }> {
 
     if (text == "")
       throw new Error("the prompt can not be empty.")
@@ -188,7 +193,7 @@ export default class ChatBot {
     const decoder = new TextDecoder();
     const self = this;
     let completeResponse = ''
-   
+
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk)
