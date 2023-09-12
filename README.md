@@ -13,6 +13,7 @@ npm i huggingface-chat
 ## Example usage 
 
 ###  With non streaming api 
+
 ```js
 
 import { Login ,ChatBot} from "huggingface-chat";
@@ -24,13 +25,14 @@ const cachePath = "./login_cache/"
 const signin = new Login(EMAIL, PASSWD)
 const res = await signin.login(cachePath) // default path is ./login_cache/
 const chat = new ChatBot(res) // res is cookies which is required for subsequent aip calls
-const data = await chat.chat("who am i");
+const data = await chat.chat("who am i"); // Default model is "meta-llama/Llama-2-70b-chat-hf"
 const  response  =  await  data.completeResponsePromise()
 console.log(response)
 ```
 
 
 ###  With streaming api 
+
 ```js
 
 import { Login ,ChatBot} from "huggingface-chat";
@@ -42,7 +44,7 @@ const cachePath = "./login_cache/"
 const signin = new Login(EMAIL, PASSWD)
 const res = await signin.login(cachePath) // default path is ./login_cache/
 const chat = new ChatBot(res) // res is cookies which is required for subsequent aip calls
-const data = await chat.chat("who am i");
+const data = await chat.chat("who am i"); 
 let  reader  =  data.stream.getReader();
 while (true) {
 	const  {  done,  value  }  =  await  reader.read();
@@ -50,8 +52,25 @@ while (true) {
 	console.log(value)
 }
 ```
+
+### Switching Models
+
+```js
+/*
+Avilable models are:
+
+'meta-llama/Llama-2-70b-chat-hf'
+'codellama/CodeLlama-34b-Instruct-hf'
+'OpenAssistant/oasst-sft-6-llama-30b-xor'
+*/
+chat.switchModel('OpenAssistant/oasst-sft-6-llama-30b-xor') 
+
+```
+
+
 ## Contributions
-- If you happen to use a missing feature , feel free to open an issue.
+
+- If you happen to see missing feature or a bug, feel free to open an issue.
 - Pull requests are welcomed too!
 
 ## License
