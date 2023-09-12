@@ -1,0 +1,33 @@
+name: Jsdocs
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  generate-jsdocs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build dependencies
+        run: npm run build
+
+      - name: Generate Docs
+        run: npm run doc
+
+      
+      - name: Commit changes in jsdoc build folder
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "rahulsushilsharma@users.noreply.github.com"
+          git add ./docs
+          git commit -m "Updating Jsdoc documentation" || echo "No changes to commit"
+          git push
