@@ -1,7 +1,11 @@
 import { open } from "fs/promises"
 import { randomUUID } from 'crypto';
 
+/**
+ * ChatBot class for managing conversations and interactions with models on Hugging Face.
+ */
 export default class ChatBot {
+  // Private instance variables and properties...
   private cookie!: string
   private currentConversionID !: string
   private chatLength = 0
@@ -17,8 +21,14 @@ export default class ChatBot {
     "sec-fetch-site": "same-origin",
     "Referrer-Policy": "strict-origin-when-cross-origin"
   }
-  private currentModel = this.models[0]
+  private currentModel = this.models[0];
 
+  /**
+     * Constructs a new instance of the ChatBot class.
+     * @param {string} cookie - The user's authentication cookie.
+     * @param {string} path - The path to a file containing the authentication cookie.
+     * @throws {Error} If both `cookie` and `path` are provided or if neither is provided.
+     */
   constructor(cookie?: string, path?: string) {
     if (!cookie && !path) throw new Error('cookie or path of cookie required')
     else if (cookie && path) throw new Error('both cookie and path given')
@@ -26,16 +36,29 @@ export default class ChatBot {
     else this.readCookiesFromPath(path)
   }
 
+  /**
+    * Switches the active model for the chat.
+    * @param {'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'OpenAssistant/oasst-sft-6-llama-30b-xor'} value - The model to switch to.
+    */
   switchModel(value: 'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'OpenAssistant/oasst-sft-6-llama-30b-xor') {
     this.currentConversionID = '';
     this.currentModel = value
   }
 
-  listAvilableModels() {
+  /**
+     * Lists available models that can be used with the chat.
+     * @returns {string[]} An array of available model names.
+     */
+  listAvilableModels(): string[] {
     return this.models
   }
-  
-  async readCookiesFromPath(path: string | undefined) {
+
+  /**
+     * Reads cookies from a file path and sets them for authentication.
+     * @param {string} path - The path to the file containing cookies.
+     * @throws {Error} If `path` is undefined or if there is an error reading the file.
+     */
+  private async readCookiesFromPath(path: string | undefined) {
     if (!path) throw new Error('cookie path undefined')
     const file = await open(path);
 
@@ -44,7 +67,12 @@ export default class ChatBot {
     }
   }
 
-  async getNewChat() {
+  /**
+     * Initializes a new chat conversation.
+     * @returns {Promise<string>} The conversation ID of the new chat.
+     * @throws {Error} If the creation of a new conversation fails.
+     */
+  async getNewChat(): Promise<string> {
     const model = {
       model: this.currentModel
     }
@@ -67,13 +95,34 @@ export default class ChatBot {
     return conversationId
   }
 
-  async checkConversionId() {
+
+  /**
+    * Checks if there is an active conversation ID, and if not, creates a new chat.
+    */
+  private async checkConversionId() {
     if (!this.currentConversionID) {
       this.currentConversionID = await this.getNewChat()
     }
   }
 
 
+  /**
+     * Initiates a chat with the provided text.
+     * @param {string} text - The user's input text or prompt.
+     * @param {string} currentConversionID - The conversation ID for the current chat.
+     * @param {number} temperature - Temperature for text generation.
+     * @param {number} truncate - Maximum number of tokens in the generated response.
+     * @param {number} max_new_tokens - Maximum number of new tokens to generate.
+     * @param {number} top_p - Top-p value for text generation.
+     * @param {number} repetition_penalty - Repetition penalty for generated text.
+     * @param {number} top_k - Top-k value for text generation.
+     * @param {boolean} return_full_text - Whether to return the full text of the conversation.
+     * @param {boolean} stream - Whether to use streaming for text generation.
+     * @param {boolean} use_cache - Whether to use cached results for text generation.
+     * @param {boolean} is_retry - Whether the request is a retry.
+     * @returns {Promise<{ id: string, stream: ReadableStream|undefined, completeResponsePromise: () => Promise<string> }>} An object containing conversation details.
+     * @throws {Error} If there is an issue with the chat request.
+     */
   async chat(
     text: string,
     currentConversionID?: string,
@@ -87,7 +136,7 @@ export default class ChatBot {
     stream: boolean = true,
     use_cache: boolean = false,
     is_retry: boolean = false
-  ) {
+  ): Promise<{ id: string; stream: ReadableStream|undefined; completeResponsePromise: () => Promise<string>; }> {
 
     if (text == "")
       throw new Error("the prompt can not be empty.")
@@ -136,19 +185,10 @@ export default class ChatBot {
         return ''
       }
     }
-
-
-
-
-
-
     const decoder = new TextDecoder();
     const self = this;
     let completeResponse = ''
-    // async function completeResponse(res: string){
-    //   return new Promise<string>(resolve=>resolve(res))
-    // }
-
+   
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk)
@@ -168,8 +208,6 @@ export default class ChatBot {
         }
       },
     });
-
-
     const modifiedStream = response.body?.pipeThrough(transformStream);
 
 
@@ -199,7 +237,14 @@ export default class ChatBot {
 
 
 
-  async summarizeConversation(conversation_id?: string) {
+
+  /**
+     * Summarizes the conversation based on its conversation ID.
+     * @param {string} conversation_id - The conversation ID to summarize.
+     * @returns {Promise<any>} A Promise that resolves to the summarized conversation.
+     * @throws {Error} If there is an issue summarizing the conversation.
+     */
+  private async summarizeConversation(conversation_id?: string): Promise<any> {
 
     if (!conversation_id) {
       conversation_id = this.currentConversionID
@@ -220,8 +265,13 @@ export default class ChatBot {
     return resJson
   }
 
-
-  async preserveContext(newChat: boolean) {
+  /**
+     * Preserves the context of the current chat conversation.
+     * @param {boolean} newChat - Indicates if a new chat is being preserved.
+     * @returns {Promise<Response>} A Promise that resolves to the response from preserving chat context.
+     * @throws {Error} If there is an issue preserving chat context.
+     */
+  private async preserveContext(newChat: boolean): Promise<Response> {
     let response: Response
     if (newChat) {
       response = await fetch("https://huggingface.co/chat/conversation/" + this.currentConversionID + "/__data.json?x-sveltekit-invalidated=1_1", {
