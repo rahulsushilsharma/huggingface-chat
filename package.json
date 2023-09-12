@@ -25,7 +25,8 @@
     "build": "npm run clean && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc -p ./config/tsconfig.esm.json && move-file lib/esm/index.js lib/esm/index.mjs",
     "build:cjs": "tsc -p ./config/tsconfig.cjs.json",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "doc": "echo # Login Class > ./docs/doc.md && jsdoc2md ./lib/esm/login.js >> ./docs/doc.md && echo # Chat Class >> ./docs/doc.md && jsdoc2md ./lib/esm/chat.js >> ./docs/doc.md"
   },
   "release": {
     "branches": [
@@ -34,7 +35,6 @@
   },
   "publishConfig": {
     "access": "public"
-    
   },
   "repository": {
     "type": "git",
@@ -57,15 +57,13 @@
   "bugs": {
     "url": "https://github.com/rahulsushilsharma/huggingface-chat/issues"
   },
-  
   "homepage": "https://github.com/rahulsushilsharma/huggingface-chat#readme",
   "author": "Rahul Sharma",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.5.8",
-    "@types/tough-cookie": "^4.0.2",
-    "@types/uuid": "^9.0.3",
     "del-cli": "^5.0.0",
+    "jsdoc-to-markdown": "^8.0.0",
     "move-file-cli": "^3.0.0",
     "semantic-release": "^19.0.3",
     "typescript": "^5.2.2"

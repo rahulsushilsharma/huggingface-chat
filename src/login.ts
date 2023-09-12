@@ -1,6 +1,10 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { open, access, mkdir, writeFile } from "fs/promises"
 
+
+/**
+ * Login class for managing authentication and user sessions.
+ */
 export default class Login {
     private email: string = ''
     private password: string = ''
@@ -8,6 +12,11 @@ export default class Login {
     private client !: AxiosInstance
     private cookies: Record<string, any> = {}
 
+    /**
+    * Constructs a new instance of the Login class.
+    * @param {string} email - huggingface email address.
+    * @param {string} password - huggingface password.
+    */
     constructor(email: string, password: string) {
         this.email = email;
         this.password = password
@@ -20,8 +29,11 @@ export default class Login {
         );
 
     }
-
-    parseCookies() {
+    /**
+     * Parses cookies into a formatted string.
+     * @returns {string} A formatted string containing parsed cookies.
+     */
+    private parseCookies(): string {
         let res = ''
         if (!this.cookies) return res
         if ('token' in this.cookies) res += `token=${this.cookies['token']};`
@@ -29,8 +41,13 @@ export default class Login {
         return res
     }
 
-
-    async get(url: string, _parms?: any) {
+    /**
+     * Sends an HTTP GET request.
+     * @param {string} url - The URL to send the GET request to.
+     * @param { Record<string, any>} _parms - Optional query parameters for the request.
+     * @returns {Promise<AxiosResponse>} A Promise that resolves to the HTTP response.
+     */
+    async get(url: string, _parms?: Record<string, any>): Promise<AxiosResponse> {
         const headers = {
             ...this.headers,
             Cookie: this.parseCookies()
@@ -49,8 +66,14 @@ export default class Login {
         return response
     }
 
-
-    async post(url: string, data = {}, _headers = {}) {
+    /**
+     * Sends an HTTP POST request.
+     * @param {string} url - The URL to send the POST request to.
+     * @param { Record<string, any>} data - Data to include in the request body.
+     * @param { Record<string, any>} _headers - Optional additional headers for the request.
+     * @returns {Promise<AxiosResponse>} A Promise that resolves to the HTTP response.
+     */
+    async post(url: string, data: Record<string, any> = {}, _headers: Record<string, any> = {}): Promise<AxiosResponse> {
 
         const headers = {
             ..._headers,
@@ -67,7 +90,11 @@ export default class Login {
         return response
     }
 
-    refreshCookies(response: AxiosResponse<any, any>) {
+    /**
+     * Refreshes cookies based on the response headers.
+     * @param {AxiosResponse} response - The HTTP response to extract cookies from.
+     */
+    private refreshCookies(response: AxiosResponse<any, any>) {
         const raw_cookies = response.headers['set-cookie'] || [];
         let cookies: Record<string, any>[] = []
         try {
@@ -90,7 +117,11 @@ export default class Login {
 
     }
 
-    async signinWithEmail() {
+    /**
+     * Attempts to sign in with the provided email and password.
+     * @throws {Error} If the sign-in fails.
+     */
+    private async signinWithEmail() {
         const url = "https://huggingface.co/login"
         const data = {
             "username": this.email,
@@ -102,8 +133,12 @@ export default class Login {
         }
     }
 
-
-    async getAuthUrl() {
+    /**
+    * Retrieves the authentication URL for a chat.
+    * @returns {Promise<string>} A Promise that resolves to the authentication URL.
+    * @throws {Error} If the URL retrieval fails.
+    */
+    private async getAuthUrl(): Promise<string> {
         const url = "https://huggingface.co/chat/login"
         const headers = {
             "Referer": "https://huggingface.co/chat/login",
@@ -132,7 +167,12 @@ export default class Login {
 
     }
 
-    getCrpf(input: string): string | null {
+    /**
+     * Extracts CSRF token from a string.
+     * @param {string} input - The input string containing CSRF information.
+     * @returns {string | null} The extracted CSRF token or null if not found.
+     */
+    private getCrpf(input: string): string | null {
         const startIndex = input.indexOf('csrf');
         if (startIndex === -1) {
             return null; // Start string not found in input
@@ -147,8 +187,13 @@ export default class Login {
         return str.substring(1)
     }
 
-
-    async grantAuth(url: string) {
+    /**
+     * Grants authorization by following redirects.
+     * @param {string} url - The URL to grant authorization for.
+     * @returns {Promise<number>} A Promise that resolves to a status code.
+     * @throws {Error} If the authorization process fails.
+     */
+    private async grantAuth(url: string): Promise<number> {
         let res = await this.get(url)
         let location: any
         if (res.headers.hasOwnProperty("location")) {
@@ -181,7 +226,13 @@ export default class Login {
 
     }
 
-    async login(cache_path?: string) {
+    /**
+     * Initiates the login process.
+     * @param {string} cache_path - Optional path for caching login data.
+     * @returns {Promise<string>} A Promise that resolves to the parsed cookies.
+     * @throws {Error} If the login process fails.
+     */
+    async login(cache_path?: string): Promise<string> {
         await this.signinWithEmail()
         const location = await this.getAuthUrl()
         if (await this.grantAuth(location)) {
@@ -193,7 +244,13 @@ export default class Login {
 
     }
 
-    async cacheLogin(path: string) {
+
+    /**
+     * Caches login data to a file.
+     * @param {string} path - The path where login data will be cached.
+     */
+
+    private async cacheLogin(path: string) {
         try {
             // Check if the directory already exists
             await access(path);
@@ -210,7 +267,12 @@ export default class Login {
         }
     }
 
-    async loadLoginCache(path: string) {
+     /**
+     * Loads cached login data from a file.
+     * @param {string} path - The path to the cached login data file.
+     * @returns {Promise<string>} A Promise that resolves to the cached login data.
+     */
+    async loadLoginCache(path: string): Promise<string> {
         try {
             const file = await open(`${path}${this.email}.txt`, 'r');
             const lines: string[] = [];
