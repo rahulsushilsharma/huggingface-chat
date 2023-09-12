@@ -67,6 +67,9 @@ chat.switchModel('OpenAssistant/oasst-sft-6-llama-30b-xor')
 
 ```
 
+## Documentations
+
+Full API documentations can be found here [docs](./docs/doc.md)
 
 ## Contributions
 
