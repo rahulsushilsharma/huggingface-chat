@@ -318,7 +318,7 @@ Preserves the context of the current chat conversation.
 
 <a name="ChatResponse"></a>
 
-## ChatResponse
+## ChatResponse 
 **Kind**: global typedef  
 **Properties**
 
