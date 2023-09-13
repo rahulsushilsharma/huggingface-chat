@@ -133,7 +133,7 @@ export default class ChatBot {
     currentConversionID?: string,
     temperature: number = 0.1,
     truncate: number = 1000,
-    max_new_tokens: number = 2048,
+    max_new_tokens: number = 1024,
     top_p: number = 0.95,
     repetition_penalty: number = 1.2,
     top_k: number = 50,
@@ -198,18 +198,24 @@ export default class ChatBot {
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk)
 
-        const modifiedData = parseResponse(decodedChunk)
+        try {
 
-        if (modifiedData.generated_text) {
-          completeResponse = modifiedData.generated_text
-          controller.terminate();
-          if (self.chatLength <= 0) {
-            await self.summarizeConversation()
+          const modifiedData = parseResponse(decodedChunk)
+
+          if (modifiedData.generated_text) {
+            completeResponse = modifiedData.generated_text
+            controller.terminate();
+            if (self.chatLength <= 0) {
+              await self.summarizeConversation()
+            }
+          } else {
+            completeResponse = modifiedData.generated_text
+            controller.enqueue(modifiedData.token.text);
+
           }
-        } else {
-          completeResponse = modifiedData.generated_text
-          controller.enqueue(modifiedData.token.text);
-
+        } catch {
+          console.error( decodedChunk)
+          throw new Error('Error during parsing response')
         }
       },
     });
