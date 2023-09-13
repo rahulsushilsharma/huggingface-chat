@@ -232,16 +232,26 @@ export default class Login {
      * @returns {Promise<string>} A Promise that resolves to the parsed cookies.
      * @throws {Error} If the login process fails.
      */
-    async login(cache_path?: string): Promise<string> {
-        await this.signinWithEmail()
-        const location = await this.getAuthUrl()
-        if (await this.grantAuth(location)) {
-            this.cacheLogin(cache_path || './login_cache/')
-            return this.parseCookies()
-        }
-        else
-            throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookies}`)
+    async login(cache_path?: string, force: boolean = false): Promise<string> {
+        let cookies = "";
+        const defaultCookiePath = cache_path || './login_cache/'
 
+        if (!force) {
+            cookies = await this.loadLoginCache(defaultCookiePath)
+        }
+        if (cookies != '') {
+            console.error(`Using cache from path: '${defaultCookiePath}${this.email}.txt`);
+            return cookies;
+        } else {
+            await this.signinWithEmail()
+            const location = await this.getAuthUrl()
+            if (await this.grantAuth(location)) {
+                this.cacheLogin(defaultCookiePath)
+                return this.parseCookies()
+            }
+            else
+                throw new Error(`Grant auth fatal, please check your email or password\ncookies gained: \n${this.cookies}`)
+        }
     }
 
 
@@ -251,11 +261,15 @@ export default class Login {
      */
 
     private async cacheLogin(path: string) {
+
         try {
             // Check if the directory already exists
+
             await access(path);
             await writeFile(`${path}${this.email}.txt`, this.parseCookies());
             console.error(`Cache already exists at path '${path}${this.email}.txt, updating cache with ${this.parseCookies()}`);
+
+
         } catch (error) {
             // Create the directory if it doesn't exist
             try {
@@ -267,11 +281,11 @@ export default class Login {
         }
     }
 
-     /**
-     * Loads cached login data from a file.
-     * @param {string} path - The path to the cached login data file.
-     * @returns {Promise<string>} A Promise that resolves to the cached login data.
-     */
+    /**
+    * Loads cached login data from a file.
+    * @param {string} path - The path to the cached login data file.
+    * @returns {Promise<string>} A Promise that resolves to the cached login data.
+    */
     async loadLoginCache(path: string): Promise<string> {
         try {
             const file = await open(`${path}${this.email}.txt`, 'r');
