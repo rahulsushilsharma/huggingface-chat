@@ -2,6 +2,8 @@
 # Huggingface chat api 
 A simple api for hugging face chat with login caching.
 
+>Note: currently only supported in node 18.x and higher, working on the fix.
+
 ## Installation
 
 Current stable release (`2.x`) 
