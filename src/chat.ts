@@ -105,12 +105,7 @@ export default class ChatBot {
     }
   }
 
-  /**
-   * @typedef ChatResponse
-   * @property {string} id conversation ID
-   * @property {ReadableStream|undefined} stream Get stream response
-   * @property {completeResponsePromise: () => Promise<string>} completeResponsePromise Get complete response
-   */
+  
   /**
      * Initiates a chat with the provided text.
      * @param {string} text - The user's input text or prompt.

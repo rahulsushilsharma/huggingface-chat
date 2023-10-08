@@ -189,7 +189,7 @@ Loads cached login data from a file.
 <dt><a href="#checkConversionId">checkConversionId()</a></dt>
 <dd><p>Checks if there is an active conversation ID, and if not, creates a new chat.</p>
 </dd>
-<dt><a href="#chat">chat(text, currentConversionID, temperature, truncate, max_new_tokens, top_p, repetition_penalty, top_k, return_full_text, stream, use_cache, is_retry)</a> ⇒ <code><a href="#ChatResponse">Promise.&lt;ChatResponse&gt;</a></code></dt>
+<dt><a href="#chat">chat(text, currentConversionID, temperature, truncate, max_new_tokens, top_p, repetition_penalty, top_k, return_full_text, stream, use_cache, is_retry)</a> ⇒ <code>Promise.&lt;ChatResponse&gt;</code></dt>
 <dd><p>Initiates a chat with the provided text.</p>
 </dd>
 <dt><a href="#summarizeConversation">summarizeConversation(conversation_id)</a> ⇒ <code>Promise.&lt;any&gt;</code></dt>
@@ -198,13 +198,6 @@ Loads cached login data from a file.
 <dt><a href="#preserveContext">preserveContext(newChat)</a> ⇒ <code>Promise.&lt;Response&gt;</code></dt>
 <dd><p>Preserves the context of the current chat conversation.</p>
 </dd>
-</dl>
-
-## Typedefs
-
-<dl>
-<dt><a href="#ChatResponse">ChatResponse</a></dt>
-<dd></dd>
 </dl>
 
 <a name="switchModel"></a>
@@ -216,7 +209,7 @@ Switches the active model for the chat.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| value | <code>&#x27;meta-llama/Llama-2-70b-chat-hf&#x27;</code> \| <code>&#x27;codellama/CodeLlama-34b-Instruct-hf&#x27;</code> \| <code>&#x27;OpenAssistant/oasst-sft-6-llama-30b-xor&#x27;</code> | The model to switch to. |
+| value | <code>&#x27;meta-llama/Llama-2-70b-chat-hf&#x27;</code> \| <code>&#x27;codellama/CodeLlama-34b-Instruct-hf&#x27;</code> \| <code>&#x27;tiiuae/falcon-180B-chat&#x27;</code> \| <code>&#x27;mistralai/Mistral-7B-Instruct-v0.1&#x27;</code> | The model to switch to. |
 
 <a name="listAvilableModels"></a>
 
@@ -259,11 +252,11 @@ Checks if there is an active conversation ID, and if not, creates a new chat.
 **Kind**: global function  
 <a name="chat"></a>
 
-## chat(text, currentConversionID, temperature, truncate, max_new_tokens, top_p, repetition_penalty, top_k, return_full_text, stream, use_cache, is_retry) ⇒ [<code>Promise.&lt;ChatResponse&gt;</code>](#ChatResponse)
+## chat(text, currentConversionID, temperature, truncate, max_new_tokens, top_p, repetition_penalty, top_k, return_full_text, stream, use_cache, is_retry) ⇒ <code>Promise.&lt;ChatResponse&gt;</code>
 Initiates a chat with the provided text.
 
 **Kind**: global function  
-**Returns**: [<code>Promise.&lt;ChatResponse&gt;</code>](#ChatResponse) - An object containing conversation details.  
+**Returns**: <code>Promise.&lt;ChatResponse&gt;</code> - An object containing conversation details.  
 **Throws**:
 
 - <code>Error</code> If there is an issue with the chat request.
@@ -275,7 +268,7 @@ Initiates a chat with the provided text.
 | currentConversionID | <code>string</code> |  | The conversation ID for the current chat. |
 | temperature | <code>number</code> | <code>0.1</code> | Temperature for text generation. |
 | truncate | <code>number</code> | <code>1000</code> | Maximum number of tokens in the generated response. |
-| max_new_tokens | <code>number</code> | <code>2048</code> | Maximum number of new tokens to generate. |
+| max_new_tokens | <code>number</code> | <code>1024</code> | Maximum number of new tokens to generate. |
 | top_p | <code>number</code> | <code>0.95</code> | Top-p value for text generation. |
 | repetition_penalty | <code>number</code> | <code>1.2</code> | Repetition penalty for generated text. |
 | top_k | <code>number</code> | <code>50</code> | Top-k value for text generation. |
@@ -315,16 +308,4 @@ Preserves the context of the current chat conversation.
 | Param | Type | Description |
 | --- | --- | --- |
 | newChat | <code>boolean</code> | Indicates if a new chat is being preserved. |
-
-<a name="ChatResponse"></a>
-
-## ChatResponse 
-**Kind**: global typedef  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| id | <code>string</code> | conversation ID |
-| stream | <code>ReadableStream</code> \| <code>undefined</code> | Get stream response |
-| completeResponsePromise | <code>completeResponsePromise</code> | Get complete response |
 
