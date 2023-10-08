@@ -63,9 +63,10 @@ Avilable models are:
 
 'meta-llama/Llama-2-70b-chat-hf'
 'codellama/CodeLlama-34b-Instruct-hf'
-'OpenAssistant/oasst-sft-6-llama-30b-xor'
+'tiiuae/falcon-180B-chat'
+'mistralai/Mistral-7B-Instruct-v0.1'
 */
-chat.switchModel('OpenAssistant/oasst-sft-6-llama-30b-xor') 
+chat.switchModel('codellama/CodeLlama-34b-Instruct-hf') 
 
 ```
 

@@ -9,7 +9,7 @@ export default class ChatBot {
   private cookie!: string
   private currentConversionID !: string
   private chatLength = 0
-  private models = ['meta-llama/Llama-2-70b-chat-hf', 'codellama/CodeLlama-34b-Instruct-hf', 'OpenAssistant/oasst-sft-6-llama-30b-xor']
+  private models = ['meta-llama/Llama-2-70b-chat-hf', 'codellama/CodeLlama-34b-Instruct-hf', 'tiiuae/falcon-180B-chat','mistralai/Mistral-7B-Instruct-v0.1']
   private headers = {
     "accept": "*/*",
     "accept-language": "en-US,en;q=0.9",
@@ -38,9 +38,9 @@ export default class ChatBot {
 
   /**
     * Switches the active model for the chat.
-    * @param {'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'OpenAssistant/oasst-sft-6-llama-30b-xor'} value - The model to switch to.
+    * @param {'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'tiiuae/falcon-180B-chat'|'mistralai/Mistral-7B-Instruct-v0.1'} value - The model to switch to.
     */
-  switchModel(value: 'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'OpenAssistant/oasst-sft-6-llama-30b-xor') {
+  switchModel(value: 'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'tiiuae/falcon-180B-chat'|'mistralai/Mistral-7B-Instruct-v0.1') {
     this.currentConversionID = '';
     this.currentModel = value
   }
