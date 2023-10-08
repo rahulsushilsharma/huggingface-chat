@@ -183,10 +183,10 @@ export default class ChatBot {
 
     function parseResponse(chunck: string) {
       try {
-        const jsonObject = JSON.parse(chunck.substring(5).trim());
+        const jsonObject = JSON.parse(chunck);
         return jsonObject
       } catch (error) {
-        if (chunck.substring(5).trim()) console.error('Error parsing JSON:', chunck.substring(5).trim());
+        if (chunck) console.error('Error parsing JSON:', chunck);
         return ''
       }
     }
@@ -202,19 +202,19 @@ export default class ChatBot {
 
           const modifiedData = parseResponse(decodedChunk)
 
-          if (modifiedData.generated_text) {
-            completeResponse = modifiedData.generated_text
+          if (modifiedData.text) {
+            completeResponse = modifiedData.text
             controller.terminate();
             if (self.chatLength <= 0) {
               await self.summarizeConversation()
             }
           } else {
-            completeResponse = modifiedData.generated_text
-            controller.enqueue(modifiedData.token.text);
+            completeResponse = modifiedData.text
+            controller.enqueue(modifiedData.token);
 
           }
         } catch {
-          console.error( decodedChunk)
+          console.error(decodedChunk)
           throw new Error('Error during parsing response')
         }
       },
