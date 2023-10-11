@@ -205,14 +205,14 @@ export default class ChatBot {
 
           for (const modifiedData of modifiedDataArr) {
             if (modifiedData.text) {
-              completeResponse = modifiedData?.text
+              completeResponse = modifiedData?.text || ""
               controller.terminate();
               if (self.chatLength <= 0) {
                 await self.summarizeConversation()
               }
             } else {
               completeResponse = modifiedData.text
-              controller.enqueue(modifiedData?.token);
+              controller.enqueue(modifiedData?.token || "");
 
             }
           }
