@@ -9,7 +9,7 @@ export default class ChatBot {
   private cookie!: string
   private currentConversionID !: string
   private chatLength = 0
-  private models = ['meta-llama/Llama-2-70b-chat-hf', 'codellama/CodeLlama-34b-Instruct-hf', 'tiiuae/falcon-180B-chat','mistralai/Mistral-7B-Instruct-v0.1']
+  private models = ['meta-llama/Llama-2-70b-chat-hf', 'codellama/CodeLlama-34b-Instruct-hf', 'tiiuae/falcon-180B-chat', 'mistralai/Mistral-7B-Instruct-v0.1']
   private headers = {
     "accept": "*/*",
     "accept-language": "en-US,en;q=0.9",
@@ -40,7 +40,7 @@ export default class ChatBot {
     * Switches the active model for the chat.
     * @param {'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'tiiuae/falcon-180B-chat'|'mistralai/Mistral-7B-Instruct-v0.1'} value - The model to switch to.
     */
-  switchModel(value: 'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'tiiuae/falcon-180B-chat'|'mistralai/Mistral-7B-Instruct-v0.1') {
+  switchModel(value: 'meta-llama/Llama-2-70b-chat-hf' | 'codellama/CodeLlama-34b-Instruct-hf' | 'tiiuae/falcon-180B-chat' | 'mistralai/Mistral-7B-Instruct-v0.1') {
     this.currentConversionID = '';
     this.currentModel = value
   }
@@ -178,11 +178,17 @@ export default class ChatBot {
 
     function parseResponse(chunck: string) {
       try {
-        const jsonObject = JSON.parse(chunck);
-        return jsonObject
+        // check if chunk contains multiple jsons
+        const _jsonArr = chunck.split('}')
+        const newJsonArray: any[] = []
+
+        for (const val of _jsonArr) {
+          if(val.trim())newJsonArray.push(JSON.parse(val + '}'))
+        }
+        return newJsonArray
       } catch (error) {
         if (chunck) console.error('Error parsing JSON:', chunck);
-        return ''
+        return [{}]
       }
     }
     const decoder = new TextDecoder();
@@ -195,18 +201,20 @@ export default class ChatBot {
 
         try {
 
-          const modifiedData = parseResponse(decodedChunk)
+          const modifiedDataArr = parseResponse(decodedChunk)
 
-          if (modifiedData.text) {
-            completeResponse = modifiedData.text
-            controller.terminate();
-            if (self.chatLength <= 0) {
-              await self.summarizeConversation()
+          for (const modifiedData of modifiedDataArr) {
+            if (modifiedData.text) {
+              completeResponse = modifiedData?.text
+              controller.terminate();
+              if (self.chatLength <= 0) {
+                await self.summarizeConversation()
+              }
+            } else {
+              completeResponse = modifiedData.text
+              controller.enqueue(modifiedData?.token);
+
             }
-          } else {
-            completeResponse = modifiedData.text
-            controller.enqueue(modifiedData.token);
-
           }
         } catch {
           console.error(decodedChunk)
