@@ -2,8 +2,6 @@
 # Huggingface chat api 
 A simple api for hugging face chat with login caching.
 
->Note: currently only supported in node 18.x and higher, working on the fix.
-
 ## Installation
 
 Current stable release (`2.x`) 
@@ -60,15 +58,17 @@ while (true) {
 ```js
 /*
 Avilable models are:
-
-'meta-llama/Llama-2-70b-chat-hf'
-'codellama/CodeLlama-34b-Instruct-hf'
-'tiiuae/falcon-180B-chat'
-'mistralai/Mistral-7B-Instruct-v0.1'
+	"meta-llama/Llama-2-70b-chat-hf"
+	"codellama/CodeLlama-34b-Instruct-hf"
+	"mistralai/Mistral-7B-Instruct-v0.1"
+	"mistralai/Mistral-7B-Instruct-v0.2"
+	"NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO"
+	"openchat/openchat-3.5-0106"
 */
 chat.switchModel('codellama/CodeLlama-34b-Instruct-hf') 
 
 ```
+>Note: Supported in node 18.x and higher.
 
 ## Documentations
 
