@@ -1,4 +1,8 @@
 
+**Maintenance Notice**
+
+> This project is undergoing maintenance due to changes in the Hugging Face API structure. Anticipate the maintenance to last approximately 1 to 2 weeks. Apologizies for any inconvenience this may cause
+
 # Huggingface chat api 
 A simple api for hugging face chat with login caching.
 
