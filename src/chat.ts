@@ -376,7 +376,6 @@ export default class ChatBot {
             }
           }
         } catch {
-          console.error(decodedChunk);
           throw new Error("Error during parsing response");
         }
       },
@@ -416,7 +415,6 @@ export default class ChatBot {
    * @throws {Error} If there is an issue preserving chat context.
    */
   private async getConversationHistory(conversationId: string) {
-    console.error("getConversationHistory", conversationId);
     if (!conversationId)
       throw new Error("conversationId is required for getConversationHistory");
     let response = await fetch(
