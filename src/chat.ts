@@ -32,7 +32,11 @@ interface Sesson {
   title: string;
   model: string;
 }
-
+interface ChatResponse {
+  id: string | undefined;
+  stream: ReadableStream | undefined;
+  completeResponsePromise: () => Promise<string>;
+}
 /**
  * ChatBot class for managing conversations and interactions with models on Hugging Face.
  */
@@ -75,15 +79,23 @@ export default class ChatBot {
     else if (cookie && !path) this.cookie = cookie;
     else this.path = path;
   }
-
-  async intialize() {
+  /**
+   * Initializes the ChatBot instance.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async intialize(): Promise<void> {
     if (this.path) await this.readCookiesFromPath(this.path);
     await this.getRemoteLlms();
     this.currentModel = this.models[0];
     this.currentModelId = this.currentModel.id;
     await this.getRemoteConversations();
   }
-
+  /**
+   * Switches the current model for the chat.
+   * @param {string} value - The ID of the model to switch to.
+   * @throws {Error} If the provided model ID is not a string or if the model is not found.
+   */
   switchModel(value: string) {
     this.currentConversation = null;
     this.currentModel = null;
@@ -114,14 +126,28 @@ export default class ChatBot {
     return this.models;
   }
 
+  /**
+   * Lists available sessions for the chat.
+   * @returns {Sesson[]} An array of available sessions.
+   */
   listAvilableSesson(): Sesson[] {
     return this.sessons;
   }
 
-  showCurrentModel() {
+  /**
+   * Returns the currently selected model for the chat.
+   * @returns {Model | null} The current model.
+   */
+  showCurrentModel(): Model | null {
     return this.currentModel;
   }
 
+  /**
+   * Reads cookies from a specified file path.
+   * @param {string} path - The path to the file containing the cookies.
+   * @throws {Error} If the path is undefined.
+   * @private
+   */
   private async readCookiesFromPath(path: string | undefined) {
     if (!path) throw new Error("cookie path undefined");
     const file = await open(path);
@@ -131,9 +157,12 @@ export default class ChatBot {
     }
   }
 
-  async getRemoteConversations(
-    replaceConversationList = true
-  ): Promise<Sesson[]> {
+  /**
+   * Fetches remote conversations from a server.
+   * @returns {Promise<Sesson[]>} A promise that resolves to an array of fetched conversations.
+   * @throws {Error} If the server response is not successful.
+   */
+  async getRemoteConversations(): Promise<Sesson[]> {
     try {
       const response = await fetch("https://huggingface.co/chat/__data.json", {
         headers: {
@@ -163,19 +192,18 @@ export default class ChatBot {
         };
         conversations.push(c);
       }
-
-      if (replaceConversationList) {
-        // Replace the conversation list with the fetched conversations
-        // (Assuming you have a conversationList array defined elsewhere)
-        this.sessons = conversations;
-      }
-
+      this.sessons = conversations;
       return conversations;
     } catch (error) {
       throw error;
     }
   }
 
+  /**
+   * Fetches remote LLMs from a server.
+   * @returns {Promise<Model[]>} A promise that resolves to an array of fetched conversations.
+   * @throws {Error} If the server response is not successful.
+   */
   async getRemoteLlms(): Promise<Model[]> {
     try {
       const response = await fetch("https://huggingface.co/chat/__data.json", {
@@ -268,7 +296,7 @@ export default class ChatBot {
    * @returns {Promise<Conversation>} The conversation ID of the new chat.
    * @throws {Error} If the creation of a new conversation fails.
    */
-  async getNewChat(systemPrompt?: string) {
+  async getNewChat(systemPrompt?: string): Promise<Conversation> {
     const model = {
       model: this.currentModelId,
       preprompt: systemPrompt,
@@ -318,11 +346,7 @@ export default class ChatBot {
   async chat(
     text: string,
     currentConversionID?: string
-  ): Promise<{
-    id: string | undefined;
-    stream: ReadableStream | undefined;
-    completeResponsePromise: () => Promise<string>;
-  }> {
+  ): Promise<ChatResponse> {
     if (text == "") throw new Error("the prompt can not be empty.");
 
     if (!currentConversionID && !this.currentConversionID) {
@@ -434,9 +458,9 @@ export default class ChatBot {
   }
 
   /**
-   * Preserves the context of the current chat conversation.
-   * @returns {Promise<Response>} A Promise that resolves to the response from preserving chat context.
-   * @throws {Error} If there is an issue preserving chat context.
+   * get the details of current conversation
+   * @returns {Promise<Conversation>} A Promise that return conversation details
+   * @throws {Error} If there is an api error
    */
   private async getConversationHistory(conversationId: string) {
     if (!conversationId)
@@ -457,7 +481,7 @@ export default class ChatBot {
     );
 
     if (response.status != 200)
-      throw new Error("Unable to preserve chat context " + response);
+      throw new Error("Unable get conversation details " + response);
     else {
       const json = await response.json();
       const conversation = this.metadataParser(json, conversationId);
@@ -465,7 +489,7 @@ export default class ChatBot {
     }
   }
 
-  metadataParser(meta: Record<string, any>, conversationId: string) {
+  private metadataParser(meta: Record<string, any>, conversationId: string) {
     let conversation: Conversation = {
       id: "",
       model: "",
