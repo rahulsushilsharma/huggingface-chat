@@ -27,7 +27,7 @@
     "build:cjs": "tsc -p ./config/tsconfig.cjs.json",
     "prepack": "npm run build",
     "clean:docs": "npm run clean && del-cli package-lock.json",
-    "doc": "echo # Login Class > ./docs/doc.md && jsdoc2md ./lib/esm/login.js >> ./docs/doc.md && echo # Chat Class >> ./docs/doc.md && jsdoc2md ./lib/esm/chat.js >> ./docs/doc.md"
+    "doc": "jsdoc2md ./lib/esm/login.js >> ./docs/login.md && jsdoc2md ./lib/esm/chat.js >> ./docs/chat.md"
   },
   "release": {
     "branches": [
