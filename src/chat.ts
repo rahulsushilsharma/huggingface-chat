@@ -57,6 +57,7 @@ export default class ChatBot {
   private sessons: Sesson[] = [];
 
   private currentModel: Model | null = null;
+  private currentModelId: string | null = null;
   private currentConversation: Conversation | null = null;
   private currnetSesson: Sesson | null = null;
   private currentConversionID: string | undefined = undefined;
@@ -79,12 +80,30 @@ export default class ChatBot {
     if (this.path) await this.readCookiesFromPath(this.path);
     await this.getRemoteLlms();
     this.currentModel = this.models[0];
+    this.currentModelId = this.currentModel.id;
     await this.getRemoteConversations();
   }
 
-  switchModel(value: Model) {
+  switchModel(value: string) {
     this.currentConversation = null;
-    this.currentModel = value;
+    this.currentModel = null;
+    this.currentModelId = null;
+
+    if (typeof value === "string") {
+      for (const model of this.models) {
+        if (model.id === value) {
+          this.currentModel = model;
+          this.currentModelId = model.id;
+        }
+      }
+      if (this.currentModelId === null) {
+        throw Error(
+          "Model not found, you can list the models by calling listAvilableModels()"
+        );
+      }
+    } else {
+      throw Error("Model Id should be a string");
+    }
   }
 
   /**
@@ -97,6 +116,10 @@ export default class ChatBot {
 
   listAvilableSesson(): Sesson[] {
     return this.sessons;
+  }
+
+  showCurrentModel() {
+    return this.currentModel;
   }
 
   private async readCookiesFromPath(path: string | undefined) {
@@ -242,12 +265,13 @@ export default class ChatBot {
 
   /**
    * Initializes a new chat conversation.
-   * @returns {Promise<string>} The conversation ID of the new chat.
+   * @returns {Promise<Conversation>} The conversation ID of the new chat.
    * @throws {Error} If the creation of a new conversation fails.
    */
-  async getNewChat() {
+  async getNewChat(systemPrompt?: string) {
     const model = {
-      model: this.currentModel?.id,
+      model: this.currentModelId,
+      preprompt: systemPrompt,
     };
     let retry = 0;
     while (retry < 5) {
@@ -278,7 +302,10 @@ export default class ChatBot {
     if (!this.currentConversionID)
       throw new Error("Failed to create new conversion");
 
-    await this.getConversationHistory(this.currentConversionID);
+    const currentChat = await this.getConversationHistory(
+      this.currentConversionID
+    );
+    return currentChat;
   }
 
   /**
@@ -301,12 +328,9 @@ export default class ChatBot {
     if (!currentConversionID && !this.currentConversionID) {
       await this.getNewChat(); // if no chat is avilable
     } else if (currentConversionID) {
-
       this.currentConversionID = currentConversionID;
       await this.getConversationHistory(currentConversionID);
-
     } else if (this.currentConversionID) {
-
       await this.getConversationHistory(this.currentConversionID);
     }
 
