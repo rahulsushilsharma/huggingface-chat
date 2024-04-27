@@ -57,8 +57,14 @@ while (true) {
 
 
 data = await chat.chat("what is my name"); 
-const response = await data.completeResponsePromise() //non streaming response
+let response = await data.completeResponsePromise() //non streaming response
 console.log(response)
+
+data = await chat.chat("what is my name", sessons[0].id); // using existing sessons
+response = await data.completeResponsePromise()
+console.log(response)
+
+
 
 ```
 
@@ -67,11 +73,12 @@ console.log(response)
 
 ## Documentations
 
-Full API documentations can be found here [docs](./docs/doc.md)
+Full API documentations of both classes can be found here [Chat](./docs/chat.md) [Login](./docs/login.md)
+
 
 ## Contributions
 
-- If you happen to see missing feature or a bug, feel free to open an issue.
+- If you happen to see missing feature or a bug, feel free to open an [issue](https://github.com/rahulsushilsharma/huggingface-chat/issues).
 - Pull requests are welcomed too!
 
 ## License
