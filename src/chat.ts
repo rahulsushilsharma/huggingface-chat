@@ -393,11 +393,11 @@ export default class ChatBot {
     function parseResponse(chunck: string) {
       try {
         // check if chunk contains multiple jsons
-        const _jsonArr = chunck.split("}");
+        const _jsonArr = chunck.split("\n");
         const newJsonArray: any[] = [];
 
         for (const val of _jsonArr) {
-          if (val.trim()) newJsonArray.push(JSON.parse(val + "}"));
+          if (val.trim()) newJsonArray.push(JSON.parse(val));
         }
         return newJsonArray;
       } catch (error) {
