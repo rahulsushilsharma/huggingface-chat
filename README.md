@@ -52,7 +52,7 @@ let  reader  =  data.stream.getReader();
 while (true) {
 	const  {  done,  value  }  =  await  reader.read();
 	if (done) break;  // The streaming has ended.
-	console.log(value)
+	process.stdout.write(value)
 }
 
 
