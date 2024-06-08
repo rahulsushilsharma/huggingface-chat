@@ -54,6 +54,7 @@ export default class ChatBot {
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
+    'origin': 'https://huggingface.co',
     "Referrer-Policy": "strict-origin-when-cross-origin",
   };
   private chatLength = 0;
@@ -369,8 +370,11 @@ export default class ChatBot {
       is_retry: false,
       is_continue: false,
       web_search: false,
-      files: [],
+      tools: {},
     };
+    const formData = new FormData()
+    formData.append("data",JSON.stringify(data))
+
     const response = await fetch(
       "https://huggingface.co/chat/conversation/" +
         this.currentConversionID +
@@ -378,14 +382,13 @@ export default class ChatBot {
       {
         headers: {
           ...this.headers,
-          "content-type": "application/json",
           cookie: this.cookie,
           Referer:
             "https://huggingface.co/chat/conversation/" +
             this.currentConversionID +
             "",
         },
-        body: JSON.stringify(data),
+        body: formData,
         method: "POST",
       }
     );
