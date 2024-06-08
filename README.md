@@ -2,7 +2,7 @@
 **Deprecation Notice**
 
 > The versions 2.x and lower are deprecated please use latest.
-
+ 
 # Huggingface chat api 
 A simple api for hugging face chat with login caching.
 
@@ -70,6 +70,8 @@ console.log(response)
 
 
 >Note: Supported in node 18.x and higher.
+
+>Note: In case the package stops working there is most likely a change in hugging face api, if possible please report it.
 
 ## Documentations
 
