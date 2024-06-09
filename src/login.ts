@@ -143,6 +143,7 @@ export default class Login {
         const headers = {
             "Referer": "https://huggingface.co/chat/login",
             "User-Agent": this.headers["User-Agent"],
+            "origin": 'https://huggingface.co',
             "Content-Type": "application/x-www-form-urlencoded"
         }
         const res = await this.post(url, {}, headers)
