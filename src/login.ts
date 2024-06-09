@@ -297,6 +297,7 @@ export default class Login {
             return lines.join('');
         } catch (error) {
             console.error(`Error loading cache:`, error);
+            console.error("\ncreating new sesson")
             return ''
         }
     }
