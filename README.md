@@ -71,7 +71,7 @@ console.log(response)
 
 >Note: Supported in node 18.x and higher.
 
->Note: In case the package stops working there is most likely a change in hugging face api, if possible please report it.
+>Note: In case the package stops working there is most likely a change in hugging face api, if possible please report it and update the package to latest if available.
 
 ## Documentations
 
