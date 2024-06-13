@@ -346,7 +346,8 @@ export default class ChatBot {
    */
   async chat(
     text: string,
-    currentConversionID?: string
+    currentConversionID?: string,
+    rawStream = false
   ): Promise<ChatResponse> {
     if (text == "") throw new Error("the prompt can not be empty.");
 
@@ -419,12 +420,22 @@ export default class ChatBot {
           const modifiedDataArr = parseResponse(decodedChunk);
 
           for (const modifiedData of modifiedDataArr) {
-            if (modifiedData.type === "finalAnswer") {
-              completeResponse = modifiedData?.text || "";
-              controller.terminate();
-            } else if (modifiedData.type === "stream") {
-              controller.enqueue(modifiedData?.token || "");
+            if(rawStream){
+              const stringData = JSON.stringify(modifiedData)
+              controller.enqueue(stringData);
+              completeResponse += stringData + "\n";
+              if (modifiedData.type === "finalAnswer") {
+                controller.terminate();
+              }
+            }else{
+              if (modifiedData.type === "finalAnswer") {
+                completeResponse = modifiedData?.text || "";
+                controller.terminate();
+              } else if (modifiedData.type === "stream") {
+                controller.enqueue(modifiedData?.token || "");
+              }
             }
+            
           }
         } catch {
           throw new Error("Error during parsing response");
