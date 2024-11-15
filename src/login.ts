@@ -96,23 +96,26 @@ export default class Login {
      */
     private refreshCookies(response: AxiosResponse<any, any>) {
         const raw_cookies = response.headers['set-cookie'] || [];
-        let cookies: Record<string, any>[] = []
+        // let cookies: Record<string, any>[] = []
+        let jsonCookie : Record<string, any> = {};
         try {
             for (const cookie of raw_cookies) {
-                let jsonCookie: Record<string, any> = {}
                 for (const value of cookie.trim().split(';')) {
-                    const temp = value.trim().split('=')
-                    const key = temp[0]
-                    jsonCookie[key] = temp[1] || true
+                    const temp = value.trim().split('=');
+                    const key = temp[0];
+                   if( !jsonCookie[key] ){jsonCookie[key] = temp[1] || "";}
                 }
-                cookies.push(jsonCookie)
+                
             }
-        } catch (error) {
+        }
+        catch (error) {
             console.error(error);
         }
-        for (const cookie of cookies) {
-            if ('token' in cookie) this.cookies['token'] = cookie['token']
-            if ('hf-chat' in cookie) this.cookies['hf-chat'] = cookie['hf-chat']
+        for (const cookie in jsonCookie) {
+            if ( cookie === 'token')
+                this.cookies['token'] = jsonCookie['token'];
+            if (cookie === 'hf-chat')
+                this.cookies['hf-chat'] = jsonCookie['hf-chat'];
         }
 
     }
