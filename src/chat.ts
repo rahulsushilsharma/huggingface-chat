@@ -179,17 +179,20 @@ export default class ChatBot {
           `Failed to get remote conversations with status code: ${response.status}`
         );
       }
-      const json = await response.json();
-      const data = json.nodes[0].data;
-      const conversationIndices = data[data[0].conversations];
+      let val = await response.text()
+      val = val.split('{"type":"chunk",')[1]
+      const json = JSON.parse('{"type":"chunk",'+ val);
+      const data = json;
+
+      const conversationIndices = data['data'][0];
       const conversations: Sesson[] = [];
 
       for (const index of conversationIndices) {
-        const conversationData = data[index];
+        const conversationData = data['data'][index];
         const c: Sesson = {
-          id: data[conversationData.id],
-          title: data[conversationData.title],
-          model: data[conversationData.model],
+          id: data['data'][conversationData.id],
+          title: data['data'][conversationData.title],
+          model: data['data'][conversationData.model],
         };
         conversations.push(c);
       }
@@ -214,6 +217,7 @@ export default class ChatBot {
         },
         body: null,
         method: "GET",
+        credentials:"include"
       });
 
       if (response.status !== 200) {
@@ -221,7 +225,10 @@ export default class ChatBot {
           `Failed to get remote LLMs with status code: ${response.status}`
         );
       }
-      const json = await response.json();
+
+      let val = await response.text()
+      val = val.split('{"type":"chunk",')[0]
+      const json = JSON.parse(val)
       const data = json.nodes[0].data;
       const modelsIndices = data[data[0].models];
       const modelList: Model[] = [];
@@ -286,6 +293,7 @@ export default class ChatBot {
         modelList.push(m);
       }
       this.models = modelList;
+
       return modelList;
     } catch (error) {
       throw error;
@@ -370,7 +378,7 @@ export default class ChatBot {
       is_retry: false,
       is_continue: false,
       web_search: false,
-      tools: {},
+      tools: [],
     };
     const formData = new FormData()
     formData.append("data",JSON.stringify(data))
@@ -414,7 +422,6 @@ export default class ChatBot {
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk);
-
         try {
           const modifiedDataArr = parseResponse(decodedChunk);
 
@@ -486,7 +493,9 @@ export default class ChatBot {
     if (response.status != 200)
       throw new Error("Unable get conversation details " + response);
     else {
-      const json = await response.json();
+      let val = await response.text()
+      val = val.split('{"type":"chunk",')[0]
+      const json = JSON.parse(val)
       const conversation = this.metadataParser(json, conversationId);
       return conversation;
     }
