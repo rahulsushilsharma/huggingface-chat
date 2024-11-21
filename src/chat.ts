@@ -37,6 +37,29 @@ interface ChatResponse {
   stream: ReadableStream | undefined;
   completeResponsePromise: () => Promise<string>;
 }
+interface Tools {
+  baseUrl: string;
+  color: string;
+  createdAt: string;
+  createdById: string;
+  createdByName: string;
+  description: string;
+  displayName: string;
+  endpoint: string;
+  icon: string;
+  inputs: string;
+  last24HoursUseCount: string;
+  name: string;
+  outputComponent: string;
+  outputComponentIdx: string;
+  review: string;
+  searchTokens: string;
+  showOutput: string;
+  type: string;
+  updatedAt: string;
+  useCount: string;
+  _id: string;
+}
 /**
  * ChatBot class for managing conversations and interactions with models on Hugging Face.
  */
@@ -54,18 +77,18 @@ export default class ChatBot {
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
-    'origin': 'https://huggingface.co',
+    origin: "https://huggingface.co",
     "Referrer-Policy": "strict-origin-when-cross-origin",
   };
   private chatLength = 0;
   private models: Model[] = [];
   private sessons: Sesson[] = [];
-
   private currentModel: Model | null = null;
   private currentModelId: string | null = null;
   private currentConversation: Conversation | null = null;
   private currnetSesson: Sesson | null = null;
   private currentConversionID: string | undefined = undefined;
+  private tools: Tools[] = [];
 
   /**
    * Constructs a new instance of the ChatBot class.
@@ -179,20 +202,20 @@ export default class ChatBot {
           `Failed to get remote conversations with status code: ${response.status}`
         );
       }
-      let val = await response.text()
-      val = val.split('{"type":"chunk",')[1]
-      const json = JSON.parse('{"type":"chunk",'+ val);
+      let val = await response.text();
+      val = val.split('{"type":"chunk",')[1];
+      const json = JSON.parse('{"type":"chunk",' + val);
       const data = json;
 
-      const conversationIndices = data['data'][0];
+      const conversationIndices = data["data"][0];
       const conversations: Sesson[] = [];
 
       for (const index of conversationIndices) {
-        const conversationData = data['data'][index];
+        const conversationData = data["data"][index];
         const c: Sesson = {
-          id: data['data'][conversationData.id],
-          title: data['data'][conversationData.title],
-          model: data['data'][conversationData.model],
+          id: data["data"][conversationData.id],
+          title: data["data"][conversationData.title],
+          model: data["data"][conversationData.model],
         };
         conversations.push(c);
       }
@@ -217,7 +240,7 @@ export default class ChatBot {
         },
         body: null,
         method: "GET",
-        credentials:"include"
+        credentials: "include",
       });
 
       if (response.status !== 200) {
@@ -226,9 +249,9 @@ export default class ChatBot {
         );
       }
 
-      let val = await response.text()
-      val = val.split('{"type":"chunk",')[0]
-      const json = JSON.parse(val)
+      let val = await response.text();
+      val = val.split('{"type":"chunk",')[0];
+      const json = JSON.parse(val);
       const data = json.nodes[0].data;
       const modelsIndices = data[data[0].models];
       const modelList: Model[] = [];
@@ -295,6 +318,51 @@ export default class ChatBot {
       this.models = modelList;
 
       return modelList;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getToolList(pageNumber: number) {
+    try {
+      const response = await fetch(
+        "https://huggingface.co/chat/tools/__data.json?p=" +
+          pageNumber +
+          "&x-sveltekit-invalidated=001",
+        {
+          headers: {
+            ...this.headers,
+            cookie: this.cookie,
+          },
+          referrer: "https://huggingface.co/chat/",
+          body: null,
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error(
+          `Failed to get remote LLMs with status code: ${response.status}`
+        );
+      }
+      const data = await response.json();
+      console.log(data);
+      const dataArray = data.nodes[2].data;
+      console.log(dataArray);
+      const toolIndex = dataArray[0].tools;
+
+      const toolsJsonArr: any[] = [];
+      for (const tool of dataArray[toolIndex]) {
+        toolsJsonArr.push(dataArray[tool]);
+      }
+      for (const t of toolsJsonArr) {
+        for (const param in t) {
+          t[param] = dataArray[t[param]];
+        }
+      }
+      this.tools = toolsJsonArr;
+      return toolsJsonArr;
     } catch (error) {
       throw error;
     }
@@ -493,9 +561,9 @@ export default class ChatBot {
     if (response.status != 200)
       throw new Error("Unable get conversation details " + response);
     else {
-      let val = await response.text()
-      val = val.split('{"type":"chunk",')[0]
-      const json = JSON.parse(val)
+      let val = await response.text();
+      val = val.split('{"type":"chunk",')[0];
+      const json = JSON.parse(val);
       const conversation = this.metadataParser(json, conversationId);
       return conversation;
     }
