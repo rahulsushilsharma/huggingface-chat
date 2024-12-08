@@ -25,7 +25,7 @@
 <dt><a href="#getNewChat">getNewChat()</a> ⇒ <code>Promise.&lt;Conversation&gt;</code></dt>
 <dd><p>Initializes a new chat conversation.</p>
 </dd>
-<dt><a href="#chat">chat(text, currentConversionID)</a> ⇒ <code>Promise.&lt;ChatResponse&gt;</code></dt>
+<dt><a href="#chat">chat(text, currentConversionID, options)</a> ⇒ <code>Promise.&lt;ChatResponse&gt;</code></dt>
 <dd><p>Initiates a chat with the provided text.</p>
 </dd>
 <dt><a href="#getConversationHistory">getConversationHistory()</a> ⇒ <code>Promise.&lt;Conversation&gt;</code></dt>
@@ -110,7 +110,7 @@ Initializes a new chat conversation.
 
 <a name="chat"></a>
 
-## chat(text, currentConversionID) ⇒ <code>Promise.&lt;ChatResponse&gt;</code>
+## chat(text, currentConversionID, options) ⇒ <code>Promise.&lt;ChatResponse&gt;</code>
 Initiates a chat with the provided text.
 
 **Kind**: global function  
@@ -124,6 +124,7 @@ Initiates a chat with the provided text.
 | --- | --- | --- |
 | text | <code>string</code> | The user's input text or prompt. |
 | currentConversionID | <code>string</code> | The conversation ID for the current chat. |
+| options | <code>ChatOptions</code> |  |
 
 <a name="getConversationHistory"></a>
 
