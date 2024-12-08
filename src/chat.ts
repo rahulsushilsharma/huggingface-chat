@@ -1,20 +1,20 @@
-import { open } from "fs/promises";
+import { open, writeFile } from "fs/promises";
 
-interface Conversation {
+export interface Conversation {
   id: string;
   model: string;
   systemPrompt: string;
   title: string;
   history: History[];
 }
-interface History {
+export interface History {
   id: string;
   role: string;
   content: string;
   createdAt: number;
   updatedAt: number;
 }
-interface Model {
+export interface Model {
   id: string | null;
   name: string | null;
   displayName: string | null;
@@ -27,16 +27,46 @@ interface Model {
   modelUrl: string | null;
   parameters: { [key: string]: any };
 }
-interface Sesson {
+export interface Sesson {
   id: string;
   title: string;
   model: string;
 }
-interface ChatResponse {
+export interface ChatResponse {
   id: string | undefined;
   stream: ReadableStream | undefined;
   completeResponsePromise: () => Promise<string>;
 }
+export interface Tools {
+  baseUrl: string;
+  color: string;
+  createdAt: string;
+  createdById: string;
+  createdByName: string;
+  description: string;
+  displayName: string;
+  endpoint: string;
+  icon: string;
+  inputs: string;
+  last24HoursUseCount: string;
+  name: string;
+  outputComponent: string;
+  outputComponentIdx: string;
+  review: string;
+  searchTokens: string;
+  showOutput: string;
+  type: string;
+  updatedAt: string;
+  useCount: string;
+  _id: string;
+}
+
+export interface ChatOptions {
+  tools?: string[];
+  rawResponse?: boolean;
+  filePath?: string;
+}
+
 /**
  * ChatBot class for managing conversations and interactions with models on Hugging Face.
  */
@@ -54,18 +84,18 @@ export default class ChatBot {
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
-    'origin': 'https://huggingface.co',
+    origin: "https://huggingface.co",
     "Referrer-Policy": "strict-origin-when-cross-origin",
   };
   private chatLength = 0;
   private models: Model[] = [];
   private sessons: Sesson[] = [];
-
   private currentModel: Model | null = null;
   private currentModelId: string | null = null;
   private currentConversation: Conversation | null = null;
   private currnetSesson: Sesson | null = null;
   private currentConversionID: string | undefined = undefined;
+  private tools: Tools[] = [];
 
   /**
    * Constructs a new instance of the ChatBot class.
@@ -179,20 +209,20 @@ export default class ChatBot {
           `Failed to get remote conversations with status code: ${response.status}`
         );
       }
-      let val = await response.text()
-      val = val.split('{"type":"chunk",')[1]
-      const json = JSON.parse('{"type":"chunk",'+ val);
+      let val = await response.text();
+      val = val.split('{"type":"chunk",')[1];
+      const json = JSON.parse('{"type":"chunk",' + val);
       const data = json;
 
-      const conversationIndices = data['data'][0];
+      const conversationIndices = data["data"][0];
       const conversations: Sesson[] = [];
 
       for (const index of conversationIndices) {
-        const conversationData = data['data'][index];
+        const conversationData = data["data"][index];
         const c: Sesson = {
-          id: data['data'][conversationData.id],
-          title: data['data'][conversationData.title],
-          model: data['data'][conversationData.model],
+          id: data["data"][conversationData.id],
+          title: data["data"][conversationData.title],
+          model: data["data"][conversationData.model],
         };
         conversations.push(c);
       }
@@ -217,7 +247,7 @@ export default class ChatBot {
         },
         body: null,
         method: "GET",
-        credentials:"include"
+        credentials: "include",
       });
 
       if (response.status !== 200) {
@@ -226,9 +256,9 @@ export default class ChatBot {
         );
       }
 
-      let val = await response.text()
-      val = val.split('{"type":"chunk",')[0]
-      const json = JSON.parse(val)
+      let val = await response.text();
+      val = val.split('{"type":"chunk",')[0];
+      const json = JSON.parse(val);
       const data = json.nodes[0].data;
       const modelsIndices = data[data[0].models];
       const modelList: Model[] = [];
@@ -300,6 +330,51 @@ export default class ChatBot {
     }
   }
 
+  async getToolList(pageNumber: number) {
+    try {
+      const response = await fetch(
+        "https://huggingface.co/chat/tools/__data.json?p=" +
+          pageNumber +
+          "&x-sveltekit-invalidated=001",
+        {
+          headers: {
+            ...this.headers,
+            cookie: this.cookie,
+          },
+          referrer: "https://huggingface.co/chat/",
+          body: null,
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error(
+          `Failed to get remote LLMs with status code: ${response.status}`
+        );
+      }
+      const data = await response.json();
+      console.log(data);
+      const dataArray = data.nodes[2].data;
+      console.log(dataArray);
+      const toolIndex = dataArray[0].tools;
+
+      const toolsJsonArr: any[] = [];
+      for (const tool of dataArray[toolIndex]) {
+        toolsJsonArr.push(dataArray[tool]);
+      }
+      for (const t of toolsJsonArr) {
+        for (const param in t) {
+          t[param] = dataArray[t[param]];
+        }
+      }
+      this.tools = toolsJsonArr;
+      return toolsJsonArr;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   /**
    * Initializes a new chat conversation.
    * @returns {Promise<Conversation>} The conversation ID of the new chat.
@@ -345,16 +420,47 @@ export default class ChatBot {
     return currentChat;
   }
 
+  async downloadFile(conversation: string, fileSha: string, name: string) {
+    const response = await fetch(
+      "https://huggingface.co/chat/conversation/" +
+        conversation +
+        "/output/" +
+        fileSha,
+      {
+        headers: {
+          ...this.headers,
+          cookie: this.cookie,
+        },
+        referrer: "https://huggingface.co/chat/conversation/" + conversation,
+        referrerPolicy: "strict-origin-when-cross-origin",
+        body: null,
+        method: "GET",
+        mode: "cors",
+        credentials: "include",
+      }
+    );
+    if (response.status !== 200) {
+      throw new Error(`Error file fetch: ${await response.text()}`);
+    }
+    console.error("Writing to file:", name);
+    if (response.body) {
+      const buffer = await response.arrayBuffer();
+      await writeFile(name, Buffer.from(buffer));
+    }
+  }
+
   /**
    * Initiates a chat with the provided text.
    * @param {string} text - The user's input text or prompt.
    * @param {string} currentConversionID - The conversation ID for the current chat.
+   * @param {ChatOptions} options
    * @returns {Promise<ChatResponse>} An object containing conversation details.
    * @throws {Error} If there is an issue with the chat request.
    */
   async chat(
     text: string,
-    currentConversionID?: string
+    currentConversionID?: string,
+    options?: ChatOptions
   ): Promise<ChatResponse> {
     if (text == "") throw new Error("the prompt can not be empty.");
 
@@ -378,10 +484,10 @@ export default class ChatBot {
       is_retry: false,
       is_continue: false,
       web_search: false,
-      tools: [],
+      tools: options?.tools || [],
     };
-    const formData = new FormData()
-    formData.append("data",JSON.stringify(data))
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(data));
 
     const response = await fetch(
       "https://huggingface.co/chat/conversation/" +
@@ -418,19 +524,45 @@ export default class ChatBot {
     }
     const decoder = new TextDecoder();
     let completeResponse = "";
+    let rawResponse = options?.rawResponse;
 
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk);
         try {
           const modifiedDataArr = parseResponse(decodedChunk);
+          const filePath = options?.filePath ?options?.filePath+ "/" : "";
 
           for (const modifiedData of modifiedDataArr) {
-            if (modifiedData.type === "finalAnswer") {
-              completeResponse = modifiedData?.text || "";
-              controller.terminate();
-            } else if (modifiedData.type === "stream") {
-              controller.enqueue(modifiedData?.token || "");
+            if (rawResponse) {
+              controller.enqueue(modifiedData || "");
+              if (modifiedData.type === "finalAnswer") {
+                completeResponse = modifiedData?.text || "";
+                controller.terminate();
+              }
+              if (modifiedData?.type === "file" && _this.currentConversionID) {
+                await _this.downloadFile(
+                  _this.currentConversionID,
+                  modifiedData.sha,
+                  filePath + modifiedData.name
+                );
+              }
+            } else {
+              if (modifiedData.type === "finalAnswer") {
+                completeResponse = modifiedData?.text || "";
+                controller.terminate();
+              } else if (modifiedData.type === "stream") {
+                controller.enqueue(modifiedData?.token || "");
+              } else if (
+                modifiedData?.type === "file" &&
+                _this.currentConversionID
+              ) {
+                await _this.downloadFile(
+                  _this.currentConversionID,
+                  modifiedData.sha,
+                  filePath + modifiedData.name
+                );
+              }
             }
           }
         } catch {
@@ -439,14 +571,15 @@ export default class ChatBot {
       },
     });
     const modifiedStream = response.body?.pipeThrough(transformStream);
-
+    const _this = this;
     async function completeResponsePromise() {
+
       return new Promise<string>(async (resolve) => {
         if (!modifiedStream) {
           console.error("modifiedStream undefined");
         } else {
           let reader = modifiedStream.getReader();
-
+          
           while (true) {
             const { done, value } = await reader.read();
 
@@ -472,7 +605,7 @@ export default class ChatBot {
    * @returns {Promise<Conversation>} A Promise that return conversation details
    * @throws {Error} If there is an api error
    */
-  private async getConversationHistory(conversationId: string) {
+  private async getConversationHistory(conversationId: string): Promise<Conversation> {
     if (!conversationId)
       throw new Error("conversationId is required for getConversationHistory");
     let response = await fetch(
@@ -493,9 +626,9 @@ export default class ChatBot {
     if (response.status != 200)
       throw new Error("Unable get conversation details " + response);
     else {
-      let val = await response.text()
-      val = val.split('{"type":"chunk",')[0]
-      const json = JSON.parse(val)
+      let val = await response.text();
+      val = val.split('{"type":"chunk",')[0];
+      const json = JSON.parse(val);
       const conversation = this.metadataParser(json, conversationId);
       return conversation;
     }
