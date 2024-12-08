@@ -8,11 +8,13 @@ A simple api for hugging face chat with login caching.
 
 ## Installation
 
-Current stable release (`3.x`) 
+Current stable release (`4.x`) 
+> Added tools support 🎉
 
 ```sh
 npm i huggingface-chat
 ``` 
+
 
 ## Example usage 
 ```js
