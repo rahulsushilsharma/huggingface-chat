@@ -37,17 +37,21 @@ console.log(models)
 const sessons = chat.listAvilableSesson()
 console.log(sessons)
 
+// more info : https://huggingface.co/chat/models
 let currentModel = chat.showCurrentModel()
 console.log(currentModel)
 
 
-chat.switchModel("google/gemma-1.1-7b-it")
+chat.switchModel("microsoft/Phi-3.5-mini-instruct")
 
 currentModel = chat.showCurrentModel()
 console.log(currentModel)
 
 const currentChat = await chat.getNewChat("you are a drunk person") // optional if you want to set a system prompt
 console.log(currentChat)
+
+const tools = await chat.getToolList("1") // for the sake of not overloading the api the tools need to be called when needed also pass the page number more info : https://huggingface.co/chat/tools
+console.log(tools)
 
 let data  = await chat.chat("take screenshoot of this website : google.com", undefined, {
 	tools:["000000000000000000000001","66e99753cb638fb7e2342da5"], // pass the tools id tools[0].id
