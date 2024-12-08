@@ -1,20 +1,20 @@
-import { open } from "fs/promises";
+import { open, writeFile } from "fs/promises";
 
-interface Conversation {
+export interface Conversation {
   id: string;
   model: string;
   systemPrompt: string;
   title: string;
   history: History[];
 }
-interface History {
+export interface History {
   id: string;
   role: string;
   content: string;
   createdAt: number;
   updatedAt: number;
 }
-interface Model {
+export interface Model {
   id: string | null;
   name: string | null;
   displayName: string | null;
@@ -27,17 +27,20 @@ interface Model {
   modelUrl: string | null;
   parameters: { [key: string]: any };
 }
-interface Sesson {
+export interface Sesson {
   id: string;
   title: string;
   model: string;
 }
-interface ChatResponse {
+export interface ChatResponse {
   id: string | undefined;
   stream: ReadableStream | undefined;
-  completeResponsePromise: () => Promise<string>;
+  completeResponsePromise: () => Promise<{
+    completeResponse: string;
+    streamedChunks: any[];
+  }>;
 }
-interface Tools {
+export interface Tools {
   baseUrl: string;
   color: string;
   createdAt: string;
@@ -60,6 +63,13 @@ interface Tools {
   useCount: string;
   _id: string;
 }
+
+export interface ChatOptions {
+  tools?: string[];
+  rawResponse?: boolean;
+  filePath?: string;
+}
+
 /**
  * ChatBot class for managing conversations and interactions with models on Hugging Face.
  */
@@ -413,16 +423,47 @@ export default class ChatBot {
     return currentChat;
   }
 
+  async downloadFile(conversation: string, fileSha: string, name: string) {
+    const response = await fetch(
+      "https://huggingface.co/chat/conversation/" +
+        conversation +
+        "/output/" +
+        fileSha,
+      {
+        headers: {
+          ...this.headers,
+          cookie: this.cookie,
+        },
+        referrer: "https://huggingface.co/chat/conversation/" + conversation,
+        referrerPolicy: "strict-origin-when-cross-origin",
+        body: null,
+        method: "GET",
+        mode: "cors",
+        credentials: "include",
+      }
+    );
+    if (response.status !== 200) {
+      throw new Error(`Error file fetch: ${await response.text()}`);
+    }
+    console.error("Writing to file:", name);
+    if (response.body) {
+      const buffer = await response.arrayBuffer();
+      await writeFile(name, Buffer.from(buffer));
+    }
+  }
+
   /**
    * Initiates a chat with the provided text.
    * @param {string} text - The user's input text or prompt.
    * @param {string} currentConversionID - The conversation ID for the current chat.
+   * @param {ChatOptions} options
    * @returns {Promise<ChatResponse>} An object containing conversation details.
    * @throws {Error} If there is an issue with the chat request.
    */
   async chat(
     text: string,
-    currentConversionID?: string
+    currentConversionID?: string,
+    options?: ChatOptions
   ): Promise<ChatResponse> {
     if (text == "") throw new Error("the prompt can not be empty.");
 
@@ -446,10 +487,10 @@ export default class ChatBot {
       is_retry: false,
       is_continue: false,
       web_search: false,
-      tools: [],
+      tools: options?.tools || [],
     };
-    const formData = new FormData()
-    formData.append("data",JSON.stringify(data))
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(data));
 
     const response = await fetch(
       "https://huggingface.co/chat/conversation/" +
@@ -486,19 +527,41 @@ export default class ChatBot {
     }
     const decoder = new TextDecoder();
     let completeResponse = "";
+    let rawResponse = options?.rawResponse;
 
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
         const decodedChunk = decoder.decode(chunk);
         try {
           const modifiedDataArr = parseResponse(decodedChunk);
+          const filePath = options?.filePath ?options?.filePath+ "/" : "";
 
           for (const modifiedData of modifiedDataArr) {
-            if (modifiedData.type === "finalAnswer") {
-              completeResponse = modifiedData?.text || "";
-              controller.terminate();
-            } else if (modifiedData.type === "stream") {
-              controller.enqueue(modifiedData?.token || "");
+            if (rawResponse) {
+              controller.enqueue(modifiedData || "");
+              if (modifiedData?.type === "file" && _this.currentConversionID) {
+                await _this.downloadFile(
+                  _this.currentConversionID,
+                  modifiedData.sha,
+                  filePath + modifiedData.name
+                );
+              }
+            } else {
+              if (modifiedData.type === "finalAnswer") {
+                completeResponse = modifiedData?.text || "";
+                controller.terminate();
+              } else if (modifiedData.type === "stream") {
+                controller.enqueue(modifiedData?.token || "");
+              } else if (
+                modifiedData?.type === "file" &&
+                _this.currentConversionID
+              ) {
+                await _this.downloadFile(
+                  _this.currentConversionID,
+                  modifiedData.sha,
+                  filePath + modifiedData.name
+                );
+              }
             }
           }
         } catch {
@@ -507,19 +570,40 @@ export default class ChatBot {
       },
     });
     const modifiedStream = response.body?.pipeThrough(transformStream);
-
+    const _this = this;
     async function completeResponsePromise() {
-      return new Promise<string>(async (resolve) => {
+      rawResponse = true;
+
+      return new Promise<{
+        completeResponse: string;
+        streamedChunks: any[];
+      }>(async (resolve) => {
         if (!modifiedStream) {
           console.error("modifiedStream undefined");
         } else {
           let reader = modifiedStream.getReader();
-
+          const filePath = options?.filePath ?options?.filePath+ "/" : "";
+          const data: {
+            completeResponse: string;
+            streamedChunks: any[];
+          } = {
+            completeResponse: "",
+            streamedChunks: [],
+          };
           while (true) {
             const { done, value } = await reader.read();
 
+            data.streamedChunks.push(value);
+            if (value?.type === "file" && _this.currentConversionID) {
+              await _this.downloadFile(
+                _this.currentConversionID,
+                value.sha,
+                filePath + value.name
+              );
+            }
             if (done) {
-              resolve(completeResponse);
+              data.completeResponse = completeResponse;
+              resolve(data);
               break; // The streaming has ended.
             }
           }
