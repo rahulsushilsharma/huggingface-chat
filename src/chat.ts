@@ -35,10 +35,7 @@ export interface Sesson {
 export interface ChatResponse {
   id: string | undefined;
   stream: ReadableStream | undefined;
-  completeResponsePromise: () => Promise<{
-    completeResponse: string;
-    streamedChunks: any[];
-  }>;
+  completeResponsePromise: () => Promise<string>;
 }
 export interface Tools {
   baseUrl: string;
@@ -539,6 +536,10 @@ export default class ChatBot {
           for (const modifiedData of modifiedDataArr) {
             if (rawResponse) {
               controller.enqueue(modifiedData || "");
+              if (modifiedData.type === "finalAnswer") {
+                completeResponse = modifiedData?.text || "";
+                controller.terminate();
+              }
               if (modifiedData?.type === "file" && _this.currentConversionID) {
                 await _this.downloadFile(
                   _this.currentConversionID,
@@ -572,38 +573,18 @@ export default class ChatBot {
     const modifiedStream = response.body?.pipeThrough(transformStream);
     const _this = this;
     async function completeResponsePromise() {
-      rawResponse = true;
 
-      return new Promise<{
-        completeResponse: string;
-        streamedChunks: any[];
-      }>(async (resolve) => {
+      return new Promise<string>(async (resolve) => {
         if (!modifiedStream) {
           console.error("modifiedStream undefined");
         } else {
           let reader = modifiedStream.getReader();
-          const filePath = options?.filePath ?options?.filePath+ "/" : "";
-          const data: {
-            completeResponse: string;
-            streamedChunks: any[];
-          } = {
-            completeResponse: "",
-            streamedChunks: [],
-          };
+          
           while (true) {
             const { done, value } = await reader.read();
 
-            data.streamedChunks.push(value);
-            if (value?.type === "file" && _this.currentConversionID) {
-              await _this.downloadFile(
-                _this.currentConversionID,
-                value.sha,
-                filePath + value.name
-              );
-            }
             if (done) {
-              data.completeResponse = completeResponse;
-              resolve(data);
+              resolve(completeResponse);
               break; // The streaming has ended.
             }
           }
@@ -624,7 +605,7 @@ export default class ChatBot {
    * @returns {Promise<Conversation>} A Promise that return conversation details
    * @throws {Error} If there is an api error
    */
-  private async getConversationHistory(conversationId: string) {
+  private async getConversationHistory(conversationId: string): Promise<Conversation> {
     if (!conversationId)
       throw new Error("conversationId is required for getConversationHistory");
     let response = await fetch(

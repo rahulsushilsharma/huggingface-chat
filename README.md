@@ -47,7 +47,11 @@ console.log(currentModel)
 const currentChat = await chat.getNewChat("you are a drunk person") // optional if you want to set a system prompt
 console.log(currentChat)
 
-let data = await chat.chat("hi my name is jhon"); 
+let data  = await chat.chat("take screenshoot of this website : google.com", undefined, {
+	tools:["000000000000000000000001","66e99753cb638fb7e2342da5"], // pass the tools id tools[0].id
+	rawResponse:true
+}); 
+
 let  reader  =  data.stream.getReader();
 while (true) {
 	const  {  done,  value  }  =  await  reader.read();
@@ -57,7 +61,7 @@ while (true) {
 
 
 data = await chat.chat("what is my name"); 
-let response = await data.completeResponsePromise() //non streaming response
+let response = await data.completeResponsePromise() //non streaming response 
 console.log(response)
 
 data = await chat.chat("what is my name", sessons[0].id); // using existing sessons
