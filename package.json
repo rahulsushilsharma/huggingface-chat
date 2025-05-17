@@ -1,6 +1,6 @@
 {
   "name": "huggingface-chat",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "type": "module",
   "description": "A lightweight and powerful Node.js API client for Hugging Face Chat. Interact with open-source LLMs like Llama 3, Mixtral, and Gemma for conversational AI, text generation, and more. Supports ESM and CJS modules.",
   "exports": {
