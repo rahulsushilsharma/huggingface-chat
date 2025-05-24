@@ -1,6 +1,6 @@
 {
   "name": "huggingface-chat",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "type": "module",
   "description": "A lightweight and powerful Node.js API client for Hugging Face Chat. Interact with open-source LLMs like Llama 3, Mixtral, and Gemma for conversational AI, text generation, and more. Supports ESM and CJS modules.",
   "exports": {
@@ -58,9 +58,7 @@
     "llama-3",
     "mixtral",
     "gemma",
-    "node.js",
     "typescript",
-    "open-source",
     "text-generation",
     "api-client"
   ],
@@ -68,24 +66,23 @@
     "url": "https://github.com/rahulsushilsharma/huggingface-chat/issues"
   },
   "homepage": "https://github.com/rahulsushilsharma/huggingface-chat#readme",
-  "author": "Rahul Sharma <rahulsushilsharma@example.com>",
+  "author": "Rahul Sharma <rahu8299@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "@types/jest": "^29.5.12",
-    "@types/node": "^22.7.4",
-    "@typescript-eslint/eslint-plugin": "^8.7.0",
-    "@typescript-eslint/parser": "^8.7.0",
+    "@biomejs/biome": "1.9.4",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.18",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "del-cli": "^5.1.0",
-    "eslint": "^9.12.0",
+    "eslint": "^9.27.0",
     "jest": "^29.7.0",
-    "jsdoc-to-markdown": "^9.0.0",
+    "jsdoc-to-markdown": "^9.1.1",
     "move-file-cli": "^3.0.0",
-    "prettier": "^3.3.3",
-    "semantic-release": "^24.1.2",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.6.2"
+    "semantic-release": "^24.2.4",
+    "ts-jest": "^29.3.4",
+    "typescript": "^5.8.3"
   },
- 
   "engines": {
     "node": ">=18.17"
   }
